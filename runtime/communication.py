@@ -85,7 +85,7 @@ class CommunicationHandler(object):
         connection_info = [tag, connected_rank]
         self.connection_list.append(connection_info)
 
-    def initialize(self, receive_ranks, send_ranks,
+    def initialize(self, receive_ranks, send_ranks,swap_send_ranks,swap_recv_ranks,
                    tensor_tags, target_tensor_names,
                    training_tensor_dtypes,
                    rank_in_stage,
@@ -97,6 +97,8 @@ class CommunicationHandler(object):
         """
         self.receive_ranks = receive_ranks
         self.send_ranks = send_ranks
+        self.swap_recv_ranks = swap_recv_ranks
+        self.swap_send_ranks = swap_send_ranks
         self.tensor_tags = tensor_tags
         self.target_tensor_names = target_tensor_names
         self.training_tensor_dtypes = training_tensor_dtypes
@@ -121,11 +123,18 @@ class CommunicationHandler(object):
         self.backward_receive_queues = {}
         self.forward_send_queues = {}
         self.backward_send_queues = {}
+        self.swap_recv_queues = {}
+        self.swap_send_queuse = {}
+    
         self.num_forward_threads = 0
         self.num_backward_threads = 0
-
+        self.num_swap_send_threads = 0
+        self.num_swap_recv_threads = 0
+        
         self.target_receive_rank_counts = {}
         self.target_send_rank_counts = {}
+        self.target_swap_recv_rank_counts = {}
+        self.target_swap_send_rank_counts = {}
         # Setup queues for each tensor to be received and sent.
         for input_name in self.receive_ranks:
             self.forward_receive_queues[input_name] = []
@@ -189,9 +198,42 @@ class CommunicationHandler(object):
 
         print ("Send ranks: ", self.send_ranks)
         print ("Receive ranks: ", self.receive_ranks)
-
+        
+        # # yxy:Setup queues for swap.
+        for swap_name in self.swap_recv_ranks:
+            self.swap_recv_queues[swap_name] = []
+            for i in range(len(self.swap_recv_ranks[swap_name])):
+                self.swap_recv_queues[swap_name].append(
+                    threadsafe_queue.Queue())
+                target_recv_rank = self.swap_recv_ranks[swap_name][i]
+                self.register_tensor(
+                    connected_rank=target_recv_rank,
+                    tag=self.local_rank+10*target_recv_rank+10)
+                if target_recv_rank not in self.target_swap_recv_rank_counts:
+                    self.target_swap_recv_rank_counts[target_recv_rank] = 0
+                self.target_swap_recv_rank_counts[target_recv_rank] += 1
+                self.num_swap_recv_threads += 1
+        for swap_name0 in self.swap_send_ranks:
+            self.swap_send_ranks[swap_name0] = []
+            for i in range(len(self.swap_send_ranks[swap_name0])):
+                self.swap_send_ranks[swap_name0].append(
+                    threadsafe_queue.Queue())
+                target_swap_send_rank = self.swap_send_ranks[swap_name0][i]
+                self.register_tensor(
+                    connected_rank=target_swap_send_rank,
+                    tag=self.local_rank*10+target_swap_send_rank+10)
+                if target_swap_send_rank not in self.target_swap_send_rank_counts:
+                    self.target_swap_send_rank_counts[target_swap_send_rank] = 0
+                self.target_swap_send_rank_counts[target_swap_send_rank] += 1
+                self.num_swap_send_threads += 1
+               
         # Queues for ack for forward pass-only runs as a clocking mechanism.
         self.num_ack_threads = 0
+        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+            f.write(str(self.local_rank)+"\n")
+            f.write("self.tensor_tags:  "+str(self.tensor_tags)+"\n")
+            f.close()
+        
         if "ack" in self.tensor_tags:
             self.backward_receive_queues["ack"] = []
             self.backward_send_queues["ack"] = []
@@ -253,14 +295,18 @@ class CommunicationHandler(object):
         """
         if forward_only:
             self.set_counter(self.num_forward_threads +
-                             self.num_ack_threads)
+                             self.num_ack_threads +
+                             self.num_swap_send_threads +
+                             self.num_swap_recv_threads)
             # For validation, receive acks in backward pass from next stage, send
             # acks in backward pass to next stage.
             self.receive_ranks["ack"] = self.ranks_in_previous_stage
             self.send_ranks["ack"] = self.ranks_in_next_stage
         else:
             self.set_counter(self.num_forward_threads +
-                             self.num_backward_threads)
+                             self.num_backward_threads +
+                             self.num_swap_send_threads +
+                             self.num_swap_recv_threads)
             if "ack" in self.receive_ranks:
                 del self.receive_ranks["ack"]
             if "ack" in self.send_ranks:
@@ -271,7 +317,12 @@ class CommunicationHandler(object):
             self.num_iterations_for_helper_threads(
                 num_iterations=num_iterations)
         dtype = torch.float16 if self.fp16 else torch.float32
-
+        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+            f.write(str(self.local_rank)+"\n")
+            f.write("num_iterations_for_forward_threads:  "+str(num_iterations_for_forward_threads)+"\n")
+            f.write("num_iterations_for_backward_threads:  "+str(num_iterations_for_backward_threads)+"\n")
+            f.close()
+        
         # Setup queues for each tensor to be received and sent.
         for input_name in self.receive_ranks:
             if input_name in self.target_tensor_names or input_name == "ack":

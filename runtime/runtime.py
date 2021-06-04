@@ -82,6 +82,9 @@ class StageRuntime:
                    local_rank, num_ranks_in_server):
         self.send_ranks = {}
         self.receive_ranks = {}
+        self.swap_send_ranks = {}
+        self.swap_recv_ranks = {}
+    
         self.rank = rank
         self.local_rank = local_rank
         self.stage = None
@@ -109,7 +112,10 @@ class StageRuntime:
         module_to_stage_map = configuration_maps['module_to_stage_map']
         stage_to_rank_map = configuration_maps['stage_to_rank_map']
         stage_to_depth_map = configuration_maps['stage_to_depth_map']
-
+        swap_send_map = configuration_maps['swap_send']
+        swap_recv_map = configuration_maps['swap_recv']
+        
+        
         if module_to_stage_map is None:
             # If IP addresses not specified, resort to all layers on
             # single machine.
@@ -205,6 +211,15 @@ class StageRuntime:
                                 self.send_ranks[tensor_name] = \
                                     stage_to_rank_map[module_to_stage_map[j]]
 
+            # tags = list(self.tensor_tags.values())
+            # for swap_send in swap_send_map[self.stage]:
+            #     self.swap_send_ranks[tags.index(swap_send)]=swap_send
+            # for swap_recv in swap_recv_map[self.stage]:
+            #     self.swap_recv_ranks[tags.index(swap_recv)]=swap_recv   
+            self.swap_send_ranks["swap_tensor"]=swap_send_map[self.stage]
+            self.swap_recv_ranks["swap_tensor"]=swap_recv_map[self.stage]
+            
+    
             for model_inputs in inputs_module_destinations.keys():
                 destination_stage = module_to_stage_map[
                     inputs_module_destinations[model_inputs]]
@@ -282,6 +297,8 @@ class StageRuntime:
             self.comm_handler.initialize(
                 self.receive_ranks,
                 self.send_ranks,
+                self.swap_send_ranks,
+                self.swap_recv_ranks,                
                 self.tensor_tags,
                 self.target_tensor_names,
                 self.training_tensor_dtypes,
@@ -289,7 +306,15 @@ class StageRuntime:
                 self.num_ranks_in_stage,
                 self.ranks_in_previous_stage,
                 self.ranks_in_next_stage)
-
+        
+        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+            f.write(str(self.stage)+"\n")
+            f.write("self.swap_send_ranks:  "+str(self.swap_send_ranks)+"\n")
+            f.write("self.swap_recv_ranks:  "+str(self.swap_recv_ranks)+"\n")
+            f.write("self.send_ranks:  "+str(self.send_ranks)+"\n")
+            f.close()
+        
+        
     @property
     def target(self):
         return self.tensors[-1]["target"]

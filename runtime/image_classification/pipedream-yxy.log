@@ -1,0 +1,36 @@
+0
+self.tensor_tags:  {'input0': 1, 'out0': 2, 'out1': 3, 'out2': 4, 'out3': 5, 'loss': 6, 'target': 7, 'ack': 8}
+0
+self.swap_send_ranks:  {'swap_tensor': []}
+self.swap_recv_ranks:  {'swap_tensor': []}
+self.send_ranks:  {'out0': [1], 'target': [1]}
+1
+self.tensor_tags:  {'input0': 1, 'out0': 2, 'out1': 3, 'out2': 4, 'out3': 5, 'loss': 6, 'target': 7, 'ack': 8}
+1
+self.swap_send_ranks:  {'swap_tensor': []}
+self.swap_recv_ranks:  {'swap_tensor': []}
+self.send_ranks:  {'out1': [2], 'target': [2]}
+1
+num_iterations_for_forward_threads:  31250
+num_iterations_for_backward_threads:  31250
+2
+self.tensor_tags:  {'input0': 1, 'out0': 2, 'out1': 3, 'out2': 4, 'out3': 5, 'loss': 6, 'target': 7, 'ack': 8}
+2
+self.swap_send_ranks:  {'swap_tensor': []}
+self.swap_recv_ranks:  {'swap_tensor': []}
+self.send_ranks:  {'out2': [3], 'target': [3]}
+2
+num_iterations_for_forward_threads:  31250
+num_iterations_for_backward_threads:  31250
+3
+self.tensor_tags:  {'input0': 1, 'out0': 2, 'out1': 3, 'out2': 4, 'out3': 5, 'loss': 6, 'target': 7, 'ack': 8}
+3
+self.swap_send_ranks:  {'swap_tensor': []}
+self.swap_recv_ranks:  {'swap_tensor': [0]}
+self.send_ranks:  {}
+3
+num_iterations_for_forward_threads:  0
+num_iterations_for_backward_threads:  31250
+0
+num_iterations_for_forward_threads:  40036
+num_iterations_for_backward_threads:  0

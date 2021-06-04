@@ -164,7 +164,9 @@ def main():
     configuration_maps = {
         'module_to_stage_map': None,
         'stage_to_rank_map': None,
-        'stage_to_depth_map': None
+        'stage_to_depth_map': None,
+        'swap_send': None,
+        'swap_recv': None
     }
     if args.config_path is not None:
         json_config_file = json.load(open(args.config_path, 'r'))
@@ -173,6 +175,13 @@ def main():
         configuration_maps['stage_to_rank_map'] = {
             int(k): v for (k, v) in configuration_maps['stage_to_rank_map'].items()}
         configuration_maps['stage_to_depth_map'] = json_config_file.get("stage_to_depth_map", None)
+        configuration_maps['swap_send'] = json_config_file.get("swap_send", None)
+        configuration_maps['swap_send'] = {
+            int(k): v for (k, v) in configuration_maps['swap_send'].items()}
+        configuration_maps['swap_recv'] = json_config_file.get("swap_recv", None)
+        configuration_maps['swap_recv'] = {
+            int(k): v for (k, v) in configuration_maps['swap_recv'].items()}
+
 
     r = runtime.StageRuntime(
         model=model, distributed_backend=args.distributed_backend,

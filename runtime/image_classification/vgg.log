@@ -1,0 +1,76 @@
+Finished initializing process group; backend: gloo, rank: 0, world_size: 4
+Send ranks:  {'out0': [1], 'target': [1]}
+Receive ranks:  {}
+Epoch: 0 Step 0 	Learning rate: 0.100000
+Epoch: [0][0/40036]	Memory: 3.929 (3.972)
+Finished initializing process group; backend: gloo, rank: 2, world_size: 4
+Send ranks:  {'out2': [3], 'target': [3]}
+Receive ranks:  {'out1': [1], 'target': [1]}
+Epoch: 0 Step 0 	Learning rate: 0.100000
+Epoch: [0][0/31250]	Memory: 1.569 (1.600)
+Finished initializing process group; backend: gloo, rank: 1, world_size: 4
+Send ranks:  {'out1': [2], 'target': [2]}
+Receive ranks:  {'out0': [0], 'target': [0]}
+Epoch: 0 Step 0 	Learning rate: 0.100000
+Epoch: [0][0/31250]	Memory: 5.715 (5.717)
+Finished initializing process group; backend: gloo, rank: 3, world_size: 4
+Send ranks:  {}
+Receive ranks:  {'out2': [2], 'target': [2]}
+Epoch: 0 Step 0 	Learning rate: 0.100000
+Epoch: [0][0/31250]	Time: 9.981 (9.981)	Epoch time [hr]: 0.003 (86.641)	Memory: 1.306 (1.327)	Loss: 6.9107 (6.9107)	Prec@1: 0.000 (0.000)	Prec@5: 0.000 (0.000)
+Epoch: [0][10/31250]	Time: 0.688 (1.828)	Epoch time [hr]: 0.006 (15.868)	Memory: 2.351 (2.986)	Loss: 6.9211 (7.0035)	Prec@1: 0.000 (0.284)	Prec@5: 0.000 (0.852)
+Epoch: [0][10/31250]	Memory: 1.833 (2.168)
+Epoch: [0][10/31250]	Memory: 6.233 (7.621)
+Epoch: [0][10/40036]	Memory: 4.360 (5.616)
+Epoch: [0][20/31250]	Time: 1.139 (1.503)	Epoch time [hr]: 0.009 (13.044)	Memory: 2.351 (2.986)	Loss: 6.9031 (6.9594)	Prec@1: 0.000 (0.149)	Prec@5: 0.000 (0.446)
+Epoch: [0][20/31250]	Memory: 1.833 (2.168)
+Epoch: [0][20/31250]	Memory: 6.233 (7.621)
+Epoch: [0][20/40036]	Memory: 4.360 (5.616)
+Epoch: [0][30/31250]	Time: 1.361 (1.425)	Epoch time [hr]: 0.012 (12.373)	Memory: 2.351 (2.986)	Loss: 6.9160 (6.9444)	Prec@1: 0.000 (0.101)	Prec@5: 0.000 (0.706)
+Epoch: [0][30/31250]	Memory: 1.833 (2.168)
+Epoch: [0][30/40036]	Memory: 4.360 (5.616)
+Epoch: [0][30/31250]	Memory: 6.336 (7.621)
+Epoch: [0][40/31250]	Time: 1.614 (1.353)	Epoch time [hr]: 0.015 (11.743)	Memory: 2.351 (2.986)	Loss: 6.8937 (6.9357)	Prec@1: 0.000 (0.152)	Prec@5: 0.000 (0.762)
+Epoch: [0][40/31250]	Memory: 1.833 (2.168)
+Epoch: [0][40/40036]	Memory: 4.360 (5.616)
+Epoch: [0][40/31250]	Memory: 6.336 (7.621)
+Epoch: [0][50/31250]	Time: 1.817 (1.339)	Epoch time [hr]: 0.019 (11.619)	Memory: 2.351 (2.986)	Loss: 6.9107 (6.9308)	Prec@1: 0.000 (0.123)	Prec@5: 0.000 (0.735)
+Epoch: [0][50/31250]	Memory: 1.833 (2.168)
+Epoch: [0][50/40036]	Memory: 4.360 (5.616)
+Epoch: [0][50/31250]	Memory: 6.336 (7.621)
+Epoch: [0][60/31250]	Time: 1.080 (1.314)	Epoch time [hr]: 0.022 (11.403)	Memory: 2.351 (2.986)	Loss: 6.9112 (6.9274)	Prec@1: 0.000 (0.102)	Prec@5: 0.000 (0.717)
+Epoch: [0][60/31250]	Memory: 1.833 (2.168)
+Epoch: [0][60/31250]	Memory: 6.233 (7.621)
+Epoch: [0][60/40036]	Memory: 4.360 (5.616)
+Epoch: [0][70/31250]	Time: 1.236 (1.302)	Epoch time [hr]: 0.026 (11.303)	Memory: 2.351 (2.986)	Loss: 6.9074 (6.9236)	Prec@1: 0.000 (0.088)	Prec@5: 0.000 (0.792)
+Epoch: [0][70/31250]	Memory: 1.833 (2.168)
+Epoch: [0][70/40036]	Memory: 4.360 (5.616)
+Epoch: [0][70/31250]	Memory: 6.336 (7.621)
+Epoch: [0][80/31250]	Time: 0.810 (1.292)	Epoch time [hr]: 0.029 (11.216)	Memory: 2.351 (2.986)	Loss: 6.9057 (6.9210)	Prec@1: 0.000 (0.077)	Prec@5: 0.000 (0.694)
+Epoch: [0][80/31250]	Memory: 1.833 (2.168)
+Epoch: [0][80/31250]	Memory: 6.233 (7.621)
+Epoch: [0][80/40036]	Memory: 4.360 (5.616)
+Epoch: [0][90/31250]	Time: 1.301 (1.284)	Epoch time [hr]: 0.032 (11.150)	Memory: 2.351 (2.986)	Loss: 6.8890 (6.9203)	Prec@1: 0.000 (0.103)	Prec@5: 0.000 (0.687)
+Epoch: [0][90/31250]	Memory: 1.833 (2.168)
+Epoch: [0][90/40036]	Memory: 4.360 (5.616)
+Epoch: [0][90/31250]	Memory: 6.336 (7.621)
+Epoch: 0 Step 100 	Learning rate: 0.100000
+Epoch: [0][100/31250]	Time: 0.733 (1.272)	Epoch time [hr]: 0.036 (11.042)	Memory: 2.351 (2.986)	Loss: 6.8756 (6.9196)	Prec@1: 0.000 (0.093)	Prec@5: 0.000 (0.619)
+Epoch: 0 Step 100 	Learning rate: 0.100000
+Epoch: [0][100/31250]	Memory: 1.833 (2.168)
+Epoch: 0 Step 100 	Learning rate: 0.100000
+Epoch: [0][100/31250]	Memory: 6.336 (7.621)
+Epoch: 0 Step 100 	Learning rate: 0.100000
+Epoch: [0][100/40036]	Memory: 4.360 (5.616)
+Epoch: [0][110/31250]	Time: 1.372 (1.271)	Epoch time [hr]: 0.039 (11.030)	Memory: 2.351 (2.986)	Loss: 6.9111 (6.9180)	Prec@1: 0.000 (0.084)	Prec@5: 0.000 (0.619)
+Epoch: [0][110/31250]	Memory: 1.833 (2.168)
+Epoch: [0][110/40036]	Memory: 4.360 (5.616)
+Epoch: [0][110/31250]	Memory: 6.336 (7.621)
+Epoch: [0][120/31250]	Time: 1.085 (1.264)	Epoch time [hr]: 0.042 (10.974)	Memory: 2.351 (2.986)	Loss: 6.8951 (6.9175)	Prec@1: 0.000 (0.077)	Prec@5: 0.000 (0.620)
+Epoch: [0][120/31250]	Memory: 1.833 (2.168)
+Epoch: [0][120/31250]	Memory: 6.336 (7.621)
+Epoch: [0][120/40036]	Memory: 4.360 (5.616)
+Epoch: [0][130/31250]	Time: 0.813 (1.257)	Epoch time [hr]: 0.046 (10.913)	Memory: 2.351 (2.986)	Loss: 6.9389 (6.9165)	Prec@1: 0.000 (0.072)	Prec@5: 0.000 (0.620)
+Epoch: [0][130/31250]	Memory: 1.833 (2.168)
+Epoch: [0][130/31250]	Memory: 6.336 (7.621)
+Epoch: [0][130/40036]	Memory: 4.360 (5.616)

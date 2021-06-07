@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
+from torch import device, norm_except_dim, tensor, zeros
 import torch.optim
 import time
 
@@ -110,6 +111,17 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
     def load_old_params(self):
         if self.num_versions > 1:
             self.set_params(*self.queue[0])
+    
+    def swap_weights(self,swap_version,selfrank):
+        if str(self.queue[-1][1]) == swap_version :
+            # for layer in self.queue[-1][0]:
+            #     for key in layer:
+            #         layer[key]=zeros(1)
+            
+            return torch.ones(2,3,device="cuda:0")
+        else:
+            return None
+        
 
     def load_new_params(self):
         if self.num_versions > 1:

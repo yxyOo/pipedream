@@ -237,6 +237,12 @@ def main():
                                           verbose_freq=args.verbose_frequency,
                                           macrobatch=args.macrobatch)
 
+    with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+            f.write(str(args.rank)+"\n")
+            f.write("self.num_versions:  "+str(num_versions)+"\n")
+            f.close()
+    
+    
     if args.resume:
         optimizer.load_state_dict(checkpoint['optimizer'])
 
@@ -372,7 +378,22 @@ def train(train_loader, r, optimizer, epoch):
     for i in range(n - num_warmup_minibatches):
         # perform forward pass
         r.run_forward()
+        # swap v0 para
+        swap_once = True
+        if args.rank == 0 :
+            tensor_swap=optimizer.swap_weights("v1",args.rank)
+            if tensor_swap is not None:
+                with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+                    f.write(str(args.rank)+"\n")
+                    f.write("tensor_swap is cuda:  "+str(tensor_swap.is_cuda)+"\n")
+                    f.close()
+                r.swap_out(tensor_swap)
 
+        if args.rank == 3 and i == 10:
+            r.get_stash_tensor()
+        
+        
+        
         # Adjust learning rate
         adjust_learning_rate(optimizer, epoch, args.epochs, r, args.lr_policy, i, n)
 

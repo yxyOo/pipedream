@@ -123,18 +123,26 @@ class CommunicationHandler(object):
         self.backward_receive_queues = {}
         self.forward_send_queues = {}
         self.backward_send_queues = {}
-        self.swap_recv_queues = {}
-        self.swap_send_queuse = {}
+        self.swap_recv_queues = {} ## stash other gpus's tensors 
+        self.swap_send_queues = {} ## tensors that to be swap put
+        self.swap_recv_send_queues = {} ## return other gpus's tensors 
+        self.swap_send_recv_queues = {} ## tensors that to be swap in
+    
+    
     
         self.num_forward_threads = 0
         self.num_backward_threads = 0
         self.num_swap_send_threads = 0
         self.num_swap_recv_threads = 0
+        self.num_swap_send_recv_threads = 0
+        self.num_swap_recv_send_threads = 0
         
         self.target_receive_rank_counts = {}
         self.target_send_rank_counts = {}
         self.target_swap_recv_rank_counts = {}
         self.target_swap_send_rank_counts = {}
+        self.target_swap_recv_send_rank_counts = {}
+        self.target_swap_send_recv_rank_counts = {}
         # Setup queues for each tensor to be received and sent.
         for input_name in self.receive_ranks:
             self.forward_receive_queues[input_name] = []
@@ -202,8 +210,11 @@ class CommunicationHandler(object):
         # # yxy:Setup queues for swap.
         for swap_name in self.swap_recv_ranks:
             self.swap_recv_queues[swap_name] = []
+            self.swap_recv_send_queues[swap_name] = []
             for i in range(len(self.swap_recv_ranks[swap_name])):
                 self.swap_recv_queues[swap_name].append(
+                    threadsafe_queue.Queue())
+                self.swap_recv_send_queues[swap_name].append(
                     threadsafe_queue.Queue())
                 target_recv_rank = self.swap_recv_ranks[swap_name][i]
                 self.register_tensor(
@@ -213,10 +224,14 @@ class CommunicationHandler(object):
                     self.target_swap_recv_rank_counts[target_recv_rank] = 0
                 self.target_swap_recv_rank_counts[target_recv_rank] += 1
                 self.num_swap_recv_threads += 1
+                self.num_swap_recv_send_threads += 1
         for swap_name0 in self.swap_send_ranks:
-            self.swap_send_ranks[swap_name0] = []
+            self.swap_send_queues[swap_name0] = []
+            self.swap_send_recv_queues[swap_name0] = []
             for i in range(len(self.swap_send_ranks[swap_name0])):
-                self.swap_send_ranks[swap_name0].append(
+                self.swap_send_queues[swap_name0].append(
+                    threadsafe_queue.Queue())
+                self.swap_send_recv_queues[swap_name0].append(
                     threadsafe_queue.Queue())
                 target_swap_send_rank = self.swap_send_ranks[swap_name0][i]
                 self.register_tensor(
@@ -226,6 +241,7 @@ class CommunicationHandler(object):
                     self.target_swap_send_rank_counts[target_swap_send_rank] = 0
                 self.target_swap_send_rank_counts[target_swap_send_rank] += 1
                 self.num_swap_send_threads += 1
+                self.num_swap_send_recv_threads += 1
                
         # Queues for ack for forward pass-only runs as a clocking mechanism.
         self.num_ack_threads = 0
@@ -296,7 +312,9 @@ class CommunicationHandler(object):
         if forward_only:
             self.set_counter(self.num_forward_threads +
                              self.num_ack_threads +
+                             self.num_swap_send_recv_threads +
                              self.num_swap_send_threads +
+                             self.num_swap_recv_send_threads +
                              self.num_swap_recv_threads)
             # For validation, receive acks in backward pass from next stage, send
             # acks in backward pass to next stage.
@@ -304,8 +322,10 @@ class CommunicationHandler(object):
             self.send_ranks["ack"] = self.ranks_in_next_stage
         else:
             self.set_counter(self.num_forward_threads +
-                             self.num_backward_threads +
+                             self.num_ack_threads +
+                             self.num_swap_send_recv_threads +
                              self.num_swap_send_threads +
+                             self.num_swap_recv_send_threads +
                              self.num_swap_recv_threads)
             if "ack" in self.receive_ranks:
                 del self.receive_ranks["ack"]
@@ -316,6 +336,11 @@ class CommunicationHandler(object):
          num_iterations_for_backward_threads) = \
             self.num_iterations_for_helper_threads(
                 num_iterations=num_iterations)
+        
+        
+        #yxy: Linearly with version number
+        num_iterations_for_send_threads = 1 
+        num_iterations_for_recv_threads = 1
         dtype = torch.float16 if self.fp16 else torch.float32
         with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
             f.write(str(self.local_rank)+"\n")
@@ -379,8 +404,37 @@ class CommunicationHandler(object):
                         send_helper_thread,
                         [target_tensor_name, i, False],
                         num_iterations_for_forward_threads)
+        
+        # yxy:Setup swap queues
+        for swap_send_rank_tmp in self.swap_send_ranks:
+            for i in range(len(self.swap_send_ranks[swap_send_rank_tmp])):
+                self.start_helper_thread(
+                    self.swap_send_helper_thread_args,
+                    send_helper_thread,
+                    [swap_send_rank_tmp, i, False],
+                    num_iterations_for_send_threads)
+                self.start_helper_thread(
+                    self.swap_recv_helper_thread_args,
+                    recv_helper_thread,
+                    [swap_send_rank_tmp, i, torch.float32,True],
+                    num_iterations_for_recv_threads)
 
-        # Start helper threads for ack for forward pass-only run as a clocking
+        for swap_recv_rank_tmp in self.swap_recv_ranks:
+            for i in range(len(self.swap_recv_ranks[swap_recv_rank_tmp])):
+                self.start_helper_thread(
+                    self.swap_recv_helper_thread_args,
+                    recv_helper_thread,
+                    [swap_recv_rank_tmp, i,  torch.float32,False],
+                    num_iterations_for_recv_threads)
+                self.start_helper_thread(
+                    self.swap_send_helper_thread_args,
+                    send_helper_thread,
+                    [swap_recv_rank_tmp, i, True],
+                    num_iterations_for_send_threads)
+
+
+        # Start helper threads f
+        # or ack for forward pass-only run as a clocking
         # mechanism.
         if forward_only:
             if "ack" in self.receive_ranks:
@@ -596,11 +650,39 @@ class CommunicationHandler(object):
         else:
             queue = self.forward_receive_queues[tensor_name][index]
         tensor_shape = self.tensor_shapes[tensor_name]
+        
+        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+            f.write(str(self.local_rank)+"\n")
+            f.write("self.tensor_shape:  "+str(tensor_shape)+"\n")
+            f.close()
 
         return (queue, self.counter, self.local_rank, tensor_name,
                 src_rank, tag, tensor_shape, dtype, sub_process_group,
                 num_iterations)
+    
+    def swap_recv_helper_thread_args(self, tensor_name, index, dtype,
+                                backward, num_iterations):
+        if backward:
+            src_rank = self.swap_send_ranks[tensor_name][index]
+            tag = self.local_rank * 10 + src_rank + 10
+        else:
+            src_rank = self.swap_recv_ranks[tensor_name][index]
+            tag = self.local_rank  + src_rank * 10 + 10
 
+        sub_process_group = None
+
+        if backward:
+            queue = self.swap_send_recv_queues[tensor_name][index]
+        else:
+            queue = self.swap_recv_queues[tensor_name][index]
+        
+        tensor_shape = (2,3)
+
+        return (queue, self.counter, self.local_rank, tensor_name,
+                src_rank, tag, tensor_shape, dtype, sub_process_group,
+                num_iterations)
+        
+        
     def send_helper_thread_args(self, tensor_name, index,
                                 backward, num_iterations):
         if backward:
@@ -630,6 +712,26 @@ class CommunicationHandler(object):
 
         return (queue, self.counter, self.local_rank, tensor_name, self.rank,
                 dst_rank, tag, sub_process_group, num_iterations)
+    
+    def swap_send_helper_thread_args(self, tensor_name, index,
+                                backward, num_iterations):
+        if backward:
+            dst_rank = self.swap_recv_ranks[tensor_name][index]
+            tag = self.local_rank + dst_rank*10 + 10
+        else:
+            dst_rank = self.swap_send_ranks[tensor_name][index]
+            tag = self.local_rank * 10 + dst_rank + 10
+        sub_process_group = None
+        
+        if backward:
+            queue = self.swap_recv_send_queues[tensor_name][index]
+        else:
+            queue = self.swap_send_queues[tensor_name][index]
+
+        return (queue, self.counter, self.local_rank, tensor_name, self.rank,
+                dst_rank, tag, sub_process_group, num_iterations)
+    
+    
 
     def recv(self, tensor_name, forward_minibatch_id,
              backward_minibatch_id, backward=False):
@@ -646,6 +748,22 @@ class CommunicationHandler(object):
             if tensor.dtype == torch.float32:
                 tensor = tensor.requires_grad_()
             return tensor
+        
+    def swap_out_stash(self, tensor_name, forward_minibatch_id,
+             backward_minibatch_id, backward=False):
+        if backward:
+            index = (backward_minibatch_id + self.rank_in_stage) % \
+                len(self.backward_receive_queues[tensor_name])
+            tensor = self.backward_receive_queues[tensor_name][
+                index].remove()
+            return tensor
+        else:
+            index = 0
+            tensor = self.swap_recv_queues[tensor_name][
+                index].remove()
+            if tensor.dtype == torch.float32:
+                tensor = tensor.requires_grad_()
+            return tensor
 
     def send(self, tensor_name, tensor, forward_minibatch_id,
              backward_minibatch_id, backward=False):
@@ -657,6 +775,17 @@ class CommunicationHandler(object):
             index = (forward_minibatch_id + self.rank_in_stage) % \
                 len(self.send_ranks[tensor_name])
             self.forward_send_queues[tensor_name][index].add(tensor)
+    
+    def swap_out(self, tensor_name, tensor, forward_minibatch_id,
+                backward_minibatch_id, backward=False):
+            if backward:
+                index = self.get_messaging_index(sending=True)
+                dst_rank = self.swap_send_ranks[tensor_name][index]
+                self.swap_send_recv_queues[tensor_name][index].add(tensor)
+            else:
+                index = (forward_minibatch_id + self.rank_in_stage) % \
+                    len(self.swap_send_ranks[tensor_name])
+                self.swap_send_queues[tensor_name][index].add(tensor)           
 
 def recv_helper_thread(queue, counter, local_rank, tensor_name,
                        src_rank, tag, tensor_shape, dtype,
@@ -690,7 +819,7 @@ def _recv(tensor_name, src_rank, tensor_shape=None, dtype=torch.float32,
 
     Tensor will be copied to GPU prior to return.
     """
-    assert tag is not None
+    assert tag is not None 
     if tensor is None:
         assert tensor_shape is not None
         assert dtype is not None

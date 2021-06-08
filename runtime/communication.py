@@ -85,7 +85,7 @@ class CommunicationHandler(object):
         connection_info = [tag, connected_rank]
         self.connection_list.append(connection_info)
 
-    def initialize(self, receive_ranks, send_ranks,swap_send_ranks,swap_recv_ranks,
+    def initialize(self, receive_ranks, send_ranks,swap_send_ranks,swap_recv_ranks,weights_shape,
                    tensor_tags, target_tensor_names,
                    training_tensor_dtypes,
                    rank_in_stage,
@@ -99,6 +99,7 @@ class CommunicationHandler(object):
         self.send_ranks = send_ranks
         self.swap_recv_ranks = swap_recv_ranks
         self.swap_send_ranks = swap_send_ranks
+        self.weights_shape=weights_shape
         self.tensor_tags = tensor_tags
         self.target_tensor_names = target_tensor_names
         self.training_tensor_dtypes = training_tensor_dtypes
@@ -108,6 +109,7 @@ class CommunicationHandler(object):
         self.num_ranks_in_previous_stage = len(ranks_in_previous_stage)
         self.ranks_in_next_stage = ranks_in_next_stage
         self.num_ranks_in_next_stage = len(ranks_in_next_stage)
+        self.weight_index = 0
 
         self.setup_queues()
         self.setup_messaging_schedule()
@@ -339,8 +341,17 @@ class CommunicationHandler(object):
         
         
         #yxy: Linearly with version number
-        num_iterations_for_send_threads = 1 
-        num_iterations_for_recv_threads = 1
+        num_iterations_for_send_threads = 0
+        num_iterations_for_recv_threads = 0
+        for r in self.swap_send_ranks["swap_tensor"]:
+            num_iterations_for_send_threads += len(self.weights_shape[self.local_rank])
+            num_iterations_for_recv_threads += len(self.weights_shape[self.local_rank])
+        for r in self.swap_recv_ranks["swap_tensor"]:
+            num_iterations_for_send_threads += len(self.weights_shape[r])
+            num_iterations_for_recv_threads += len(self.weights_shape[r])
+        
+        
+        
         dtype = torch.float16 if self.fp16 else torch.float32
         with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
             f.write(str(self.local_rank)+"\n")
@@ -651,10 +662,7 @@ class CommunicationHandler(object):
             queue = self.forward_receive_queues[tensor_name][index]
         tensor_shape = self.tensor_shapes[tensor_name]
         
-        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-            f.write(str(self.local_rank)+"\n")
-            f.write("self.tensor_shape:  "+str(tensor_shape)+"\n")
-            f.close()
+
 
         return (queue, self.counter, self.local_rank, tensor_name,
                 src_rank, tag, tensor_shape, dtype, sub_process_group,
@@ -665,22 +673,25 @@ class CommunicationHandler(object):
         if backward:
             src_rank = self.swap_send_ranks[tensor_name][index]
             tag = self.local_rank * 10 + src_rank + 10
+            weights_shape = self.weights_shape[self.local_rank]
         else:
             src_rank = self.swap_recv_ranks[tensor_name][index]
             tag = self.local_rank  + src_rank * 10 + 10
+            weights_shape = self.weights_shape[src_rank]
 
         sub_process_group = None
+        
 
         if backward:
             queue = self.swap_send_recv_queues[tensor_name][index]
         else:
             queue = self.swap_recv_queues[tensor_name][index]
         
-        tensor_shape = (2,3)
-
+        tensor_shape = None
+        self.weight_index += 1
         return (queue, self.counter, self.local_rank, tensor_name,
                 src_rank, tag, tensor_shape, dtype, sub_process_group,
-                num_iterations)
+                num_iterations,weights_shape)
         
         
     def send_helper_thread_args(self, tensor_name, index,
@@ -789,10 +800,12 @@ class CommunicationHandler(object):
 
 def recv_helper_thread(queue, counter, local_rank, tensor_name,
                        src_rank, tag, tensor_shape, dtype,
-                       sub_process_group, num_iterations):
+                       sub_process_group, num_iterations,weights_shape=None):
     torch.cuda.set_device(local_rank)
     # This method is to be executed from a helper daemon thread.
     for i in range(num_iterations):
+        if weights_shape != None:
+            tensor_shape = weights_shape[i]
         tensor = _recv(
             tensor_name, src_rank, tensor_shape=tensor_shape,
             dtype=dtype, tag=tag,
@@ -890,3 +903,5 @@ def _send(tensor, tensor_name, src_rank, dst_rank, tag, sub_process_group=None):
 
         # Send tensor.
         dist.send(tensor=tensor, dst=dst_rank, tag=tag)
+        
+

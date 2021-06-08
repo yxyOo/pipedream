@@ -118,7 +118,9 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
             #     for key in layer:
             #         layer[key]=zeros(1)
             
-            return torch.ones(2,3,device="cuda:0")
+            
+            return self.queue[-1][0]
+            # return torch.ones(2,3,device='cuda')
         else:
             return None
         

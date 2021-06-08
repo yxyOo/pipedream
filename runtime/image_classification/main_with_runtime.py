@@ -166,7 +166,8 @@ def main():
         'stage_to_rank_map': None,
         'stage_to_depth_map': None,
         'swap_send': None,
-        'swap_recv': None
+        'swap_recv': None,
+        'weights_shape':None
     }
     if args.config_path is not None:
         json_config_file = json.load(open(args.config_path, 'r'))
@@ -181,6 +182,9 @@ def main():
         configuration_maps['swap_recv'] = json_config_file.get("swap_recv", None)
         configuration_maps['swap_recv'] = {
             int(k): v for (k, v) in configuration_maps['swap_recv'].items()}
+        configuration_maps['weights_shape'] = json_config_file.get("weights_shape", None)
+        configuration_maps['weights_shape'] = {
+            int(k): v for (k, v) in configuration_maps['weights_shape'].items()}
 
 
     r = runtime.StageRuntime(
@@ -378,16 +382,30 @@ def train(train_loader, r, optimizer, epoch):
     for i in range(n - num_warmup_minibatches):
         # perform forward pass
         r.run_forward()
-        # swap v0 para
-        swap_once = True
+        
+        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+            f.write(str(args.rank)+" finish forward " + str(i)+"\n")
+            f.close()
+
+        
+        # swap out v0 para
         if args.rank == 0 :
-            tensor_swap=optimizer.swap_weights("v1",args.rank)
-            if tensor_swap is not None:
-                with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-                    f.write(str(args.rank)+"\n")
-                    f.write("tensor_swap is cuda:  "+str(tensor_swap.is_cuda)+"\n")
-                    f.close()
-                r.swap_out(tensor_swap)
+            stage_weights=optimizer.swap_weights("v1",args.rank)
+            if stage_weights is not None:
+                for layer in stage_weights:
+                    for layer_name in layer.items():
+                        r.swap_out(layer_name[1])
+                # r.swap_out(stage_weights)
+                        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+                                f.write("send layer_name: "+str(layer_name[0])+"\n")
+                                # f.write("layer_weights_shape: "+str(layer_name[1].shape)+"\n")
+                                # f.write("layer_weights_dtype: "+str(layer_name[1].dtype)+"\n")
+                                f.close()
+                # with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+                #     f.write(str(args.rank)+"\n")
+                #     f.write("tensor_swap is cuda:  "+str(tensor_swap.is_cuda)+"\n")
+                #     f.close()
+
 
         if args.rank == 3 and i == 10:
             r.get_stash_tensor()
@@ -437,8 +455,29 @@ def train(train_loader, r, optimizer, epoch):
             r.zero_grad()
         else:
             optimizer.zero_grad()
+            
+            
+        # # swap in v0 para
+        # swap_once = True
+        # if args.rank == 0 :
+        #     # test cur verion == v0
+        #     # send signal to swap in
+        #     tensor_swap=optimizer.swap_weights("v1",args.rank)
+        #     if tensor_swap is not None:
+        #         with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+        #             f.write(str(args.rank)+"\n")
+        #             f.write("tensor_swap is cuda:  "+str(tensor_swap.is_cuda)+"\n")
+        #             f.close()
+        #         r.swap_out(tensor_swap)
+
+
+
         optimizer.load_old_params()
         r.run_backward()
+        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+            f.write(str(args.rank)+" finish backward " + str(i)+"\n")
+            f.close()
+            
         optimizer.load_new_params()
         optimizer.step()
 

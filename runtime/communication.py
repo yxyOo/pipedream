@@ -15,6 +15,7 @@ NCCL='nccl'
 GLOO='gloo'
 
 
+
 class CommunicationHandler(object):
     """ Handles communication between stages.
 
@@ -247,10 +248,7 @@ class CommunicationHandler(object):
                
         # Queues for ack for forward pass-only runs as a clocking mechanism.
         self.num_ack_threads = 0
-        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-            f.write(str(self.local_rank)+"\n")
-            f.write("self.tensor_tags:  "+str(self.tensor_tags)+"\n")
-            f.close()
+
         
         if "ack" in self.tensor_tags:
             self.backward_receive_queues["ack"] = []
@@ -433,10 +431,12 @@ class CommunicationHandler(object):
         for swap_recv_rank_tmp in self.swap_recv_ranks:
             for i in range(len(self.swap_recv_ranks[swap_recv_rank_tmp])):
                 self.start_helper_thread(
-                    self.swap_recv_helper_thread_args,
-                    recv_helper_thread,
-                    [swap_recv_rank_tmp, i,  torch.float32,False],
-                    num_iterations_for_recv_threads)
+                        self.swap_recv_helper_thread_args,
+                        recv_helper_thread,
+                        [swap_recv_rank_tmp, i,  torch.float32,False],
+                        num_iterations_for_recv_threads)
+                 
+                
                 self.start_helper_thread(
                     self.swap_send_helper_thread_args,
                     send_helper_thread,
@@ -444,6 +444,23 @@ class CommunicationHandler(object):
                     num_iterations_for_send_threads)
 
 
+        ## start listenning swap stash signal
+        for i in self.swap_recv_ranks["swap_tensor"]:
+            
+            with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+                f.write("testrank:  "+str(self.local_rank)+"\n")
+                f.close()
+            
+            
+            
+            
+            helper_thread = threading.Thread(target=self.response_swap_stash)
+            helper_thread.start()    
+        
+        
+        
+        
+        
         # Start helper threads f
         # or ack for forward pass-only run as a clocking
         # mechanism.
@@ -469,7 +486,8 @@ class CommunicationHandler(object):
         args = args_func(*args_func_args)
         helper_thread = threading.Thread(target=func,
                                          args=args)
-        helper_thread.start()
+        helper_thread.start()       
+        
 
     def create_process_groups(self):
         """ Create process groups in the same order across all ranks.
@@ -760,21 +778,7 @@ class CommunicationHandler(object):
                 tensor = tensor.requires_grad_()
             return tensor
         
-    def swap_out_stash(self, tensor_name, forward_minibatch_id,
-             backward_minibatch_id, backward=False):
-        if backward:
-            index = (backward_minibatch_id + self.rank_in_stage) % \
-                len(self.backward_receive_queues[tensor_name])
-            tensor = self.backward_receive_queues[tensor_name][
-                index].remove()
-            return tensor
-        else:
-            index = 0
-            tensor = self.swap_recv_queues[tensor_name][
-                index].remove()
-            if tensor.dtype == torch.float32:
-                tensor = tensor.requires_grad_()
-            return tensor
+   
 
     def send(self, tensor_name, tensor, forward_minibatch_id,
              backward_minibatch_id, backward=False):
@@ -790,13 +794,46 @@ class CommunicationHandler(object):
     def swap_out(self, tensor_name, tensor, forward_minibatch_id,
                 backward_minibatch_id, backward=False):
             if backward:
-                index = self.get_messaging_index(sending=True)
-                dst_rank = self.swap_send_ranks[tensor_name][index]
-                self.swap_send_recv_queues[tensor_name][index].add(tensor)
+                index = 0
+                dst_rank = self.swap_recv_ranks[tensor_name][index]
+                self.swap_recv_send_queues[tensor_name][index].add(tensor)
             else:
                 index = (forward_minibatch_id + self.rank_in_stage) % \
                     len(self.swap_send_ranks[tensor_name])
-                self.swap_send_queues[tensor_name][index].add(tensor)           
+                self.swap_send_queues[tensor_name][index].add(tensor)       
+    
+    def swap_in(self, tensor_name):
+            index = 0
+            tensor = self.swap_send_recv_queues[tensor_name][
+                index].remove()
+            if tensor.dtype == torch.float32:
+                tensor = tensor.requires_grad_()
+            return tensor
+        
+        
+    def response_swap_stash(self):
+        ## yxy:recv signal to response fetch
+        # self.swap_recv_queues["swap_tensor"][0]
+        
+    
+        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+            f.write("test swap_recv_queues"+ str(self.swap_recv_queues["swap_tensor"][0])+"\n")
+            f.close()
+        while self.swap_recv_queues["swap_tensor"][0].len() != len(self.weights_shape[0]):
+            True
+        index = 0
+        for i in self.weights_shape[0]:
+            tensor = self.swap_recv_queues["swap_tensor"][index].remove()
+            if tensor.dtype == torch.float32:
+                tensor = tensor.requires_grad_()
+            self.swap_out(
+                    "swap_tensor",
+                    tensor,
+                    forward_minibatch_id=0,
+                    backward_minibatch_id=0,
+                    backward=True)
+
+     
 
 def recv_helper_thread(queue, counter, local_rank, tensor_name,
                        src_rank, tag, tensor_shape, dtype,
@@ -812,6 +849,14 @@ def recv_helper_thread(queue, counter, local_rank, tensor_name,
             sub_process_group=sub_process_group)
         queue.add(tensor)
     counter.decrement()
+   
+
+   
+        
+   
+    
+        
+    
 
 def send_helper_thread(queue, counter, local_rank, tensor_name,
                        src_rank, dst_rank, tag,
@@ -865,6 +910,7 @@ def _recv(tensor_name, src_rank, tensor_shape=None, dtype=torch.float32,
 
         # Receive tensor.
         tensor = torch.zeros(received_tensor_shape, dtype=dtype)
+        
         dist.recv(tensor=tensor,
                   src=src_rank,
                   tag=tag)

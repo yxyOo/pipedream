@@ -485,26 +485,34 @@ class StageRuntime:
                 backward_minibatch_id=self.backward_minibatch_id,
                 backward=False)
     
-    def get_stash_tensor(self):
+    def swap_in(self):
+        ## yxy:send signdal to fetch 
+        self.swap_out(torch.ones(1,device='cuda'))
+        tensors = []
         
-            # Receive all required tensors from upstream machines.
-        for input_name in self.swap_recv_ranks["swap_tensor"]:
-            for i in self.weights_shape[input_name]:
-                with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-                    f.write(str(self.stage)+"\n")
-                    f.write("i:  "+str(i)+"\n")
-                    f.close()
-                self.stash_tensors.append({})
-                self.stash_tensors[-1][input_name] = \
-                    self.comm_handler.swap_out_stash(
-                        "swap_tensor",
-                        forward_minibatch_id=self.forward_minibatch_id,
-                        backward_minibatch_id=self.backward_minibatch_id,
-                        backward=False)
-                with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-                    f.write(str(self.stage)+"\n")
-                    f.write("get stash:  "+str(self.stash_tensors[-1][input_name])+"\n")
-                    f.close()
+    
+        for output_name in self.swap_send_ranks:
+            for i in self.weights_shape[self.local_rank]:
+                tensors.append(self.comm_handler.swap_in(output_name))
+        return tensors           
+    
+    # def get_stash_tensor(self):
+        
+    #         # Receive all required tensors from upstream machines.
+    #     for input_name in self.swap_recv_ranks["swap_tensor"]:
+    #         for i in self.weights_shape[input_name]:
+
+    #             self.stash_tensors.append({})
+    #             self.stash_tensors[-1][input_name] = \
+    #                 self.comm_handler.swap_out_stash(
+    #                     "swap_tensor",
+    #                     forward_minibatch_id=self.forward_minibatch_id,
+    #                     backward_minibatch_id=self.backward_minibatch_id,
+    #                     backward=False)
+    #             with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+    #                 f.write(str(self.stage)+"\n")
+    #                 f.write("get stash:  "+str(self.stash_tensors[-1][input_name])+"\n")
+    #                 f.close()
         
 
     def receive_tensors_backward(self):

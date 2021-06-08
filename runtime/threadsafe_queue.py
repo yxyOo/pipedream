@@ -24,3 +24,6 @@ class Queue:
         tensor = self.queue.pop(0)
         self.cv.release()
         return tensor
+    
+    def len(self):
+        return len(self.queue)

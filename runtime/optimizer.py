@@ -108,12 +108,29 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
                     attribute = state_dict[key]
         self.current_version = version
 
+
+    def if_swap_in(self,swap_in_version=None):
+        if str(self.queue[0][1])== swap_in_version :
+            return True
+        else :
+            return False
+    def recover_weights(self,tensors):
+        # i=0
+        # for layer in self.queue[0][0]:
+        #     for key in layer:
+        #         layer[key]=tensor[i]
+        #         i += 1
+        
+        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+            f.write("get_recover_weights:  "+str(tensors)+"\n")
+            f.close()
+    
     def load_old_params(self):
         if self.num_versions > 1:
             self.set_params(*self.queue[0])
     
-    def swap_weights(self,swap_version,selfrank):
-        if str(self.queue[-1][1]) == swap_version :
+    def swap_weights(self,swap_version):
+        if str(self.queue[-1][1]) == swap_version  :
             # for layer in self.queue[-1][0]:
             #     for key in layer:
             #         layer[key]=zeros(1)
@@ -123,8 +140,9 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
             # return torch.ones(2,3,device='cuda')
         else:
             return None
+    
         
-
+        
     def load_new_params(self):
         if self.num_versions > 1:
             self.set_params(*self.queue[-1])

@@ -390,7 +390,7 @@ def train(train_loader, r, optimizer, epoch):
         
         # swap out v0 para
         if args.rank == 0 :
-            stage_weights=optimizer.swap_weights("v1",args.rank)
+            stage_weights=optimizer.swap_weights("v1")
             if stage_weights is not None:
                 for layer in stage_weights:
                     for layer_name in layer.items():
@@ -407,8 +407,10 @@ def train(train_loader, r, optimizer, epoch):
                 #     f.close()
 
 
-        if args.rank == 3 and i == 10:
-            r.get_stash_tensor()
+        # if args.rank == 3 and i == 10:
+            
+            
+        #     r.get_stash_tensor()
         
         
         
@@ -457,20 +459,20 @@ def train(train_loader, r, optimizer, epoch):
             optimizer.zero_grad()
             
             
-        # # swap in v0 para
-        # swap_once = True
-        # if args.rank == 0 :
-        #     # test cur verion == v0
-        #     # send signal to swap in
-        #     tensor_swap=optimizer.swap_weights("v1",args.rank)
-        #     if tensor_swap is not None:
-        #         with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-        #             f.write(str(args.rank)+"\n")
-        #             f.write("tensor_swap is cuda:  "+str(tensor_swap.is_cuda)+"\n")
-        #             f.close()
-        #         r.swap_out(tensor_swap)
 
-
+        if args.rank == 0 and optimizer.if_swap_in("v1") :
+            with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+                f.write("before recover  \n")
+                f.close()
+            
+    
+            weights_swap_in = r.swap_in()
+            
+            
+            with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
+                f.write("after recover  \n")
+                f.close()
+            optimizer.recover_weights(weights_swap_in)
 
         optimizer.load_old_params()
         r.run_backward()

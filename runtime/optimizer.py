@@ -45,6 +45,7 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
         self.initialize_queue()
         self.verbose_freq = verbose_freq
         self.batch_counter = 0
+        self.search_version_times = 0
 
         # If macrobatching, push and pop versions at the right rate.
         if macrobatch:
@@ -115,14 +116,14 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
         else :
             return False
     def recover_weights(self,tensors):
-        # i=0
-        # for layer in self.queue[0][0]:
-        #     for key in layer:
-        #         layer[key]=tensor[i]
-        #         i += 1
+        i=0
+        for layer in self.queue[0][0]:
+            for key in layer:
+                layer[key]=tensors[i]
+                i += 1
         
         with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-            f.write("get_recover_weights:  "+str(tensors)+"\n")
+            f.write("get_recover_weights \n")
             f.close()
     
     def load_old_params(self):
@@ -131,16 +132,12 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
     
     def swap_weights(self,swap_version):
         if str(self.queue[-1][1]) == swap_version  :
-            # for layer in self.queue[-1][0]:
-            #     for key in layer:
-            #         layer[key]=zeros(1)
-            
-            
-            return self.queue[-1][0]
-            # return torch.ones(2,3,device='cuda')
-        else:
-            return None
-    
+                return self.queue[-1][0]
+        return None
+    def release_space(self):
+        for layer in self.queue[-1][0]:
+                for key in layer:
+                    layer[key]=torch.zeros(1,device='cuda')
         
         
     def load_new_params(self):

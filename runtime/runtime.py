@@ -213,18 +213,10 @@ class StageRuntime:
                                 self.send_ranks[tensor_name] = \
                                     stage_to_rank_map[module_to_stage_map[j]]
 
-            # tags = list(self.tensor_tags.values())
-            # for swap_send in swap_send_map[self.stage]:
-            #     self.swap_send_ranks[tags.index(swap_send)]=swap_send
-            # for swap_recv in swap_recv_map[self.stage]:
-            #     self.swap_recv_ranks[tags.index(swap_recv)]=swap_recv   
             self.swap_send_ranks["swap_tensor"]=swap_send_map[self.stage]
             self.swap_recv_ranks["swap_tensor"]=swap_recv_map[self.stage]
             self.weights_shape = weights_shape
-            with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-                f.write(str(self.stage)+"\n")
-                f.write("weights_shape:  "+str(self.weights_shape)+"\n")
-                f.close()
+
                 
     
             for model_inputs in inputs_module_destinations.keys():
@@ -477,7 +469,7 @@ class StageRuntime:
                 (self.tensors[-1][output_name].element_size() *
                  self.tensors[-1][output_name].nelement())
     
-    def swap_out(self,tensor):
+    def swap_out(self,tensor):        
         self.comm_handler.swap_out(
                 "swap_tensor",
                 tensor,
@@ -489,32 +481,12 @@ class StageRuntime:
         ## yxy:send signdal to fetch 
         self.swap_out(torch.ones(1,device='cuda'))
         tensors = []
-        
     
         for output_name in self.swap_send_ranks:
             for i in self.weights_shape[self.local_rank]:
                 tensors.append(self.comm_handler.swap_in(output_name))
         return tensors           
     
-    # def get_stash_tensor(self):
-        
-    #         # Receive all required tensors from upstream machines.
-    #     for input_name in self.swap_recv_ranks["swap_tensor"]:
-    #         for i in self.weights_shape[input_name]:
-
-    #             self.stash_tensors.append({})
-    #             self.stash_tensors[-1][input_name] = \
-    #                 self.comm_handler.swap_out_stash(
-    #                     "swap_tensor",
-    #                     forward_minibatch_id=self.forward_minibatch_id,
-    #                     backward_minibatch_id=self.backward_minibatch_id,
-    #                     backward=False)
-    #             with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-    #                 f.write(str(self.stage)+"\n")
-    #                 f.write("get stash:  "+str(self.stash_tensors[-1][input_name])+"\n")
-    #                 f.close()
-        
-
     def receive_tensors_backward(self):
         # Receive all required gradients from downstream
         # machines.

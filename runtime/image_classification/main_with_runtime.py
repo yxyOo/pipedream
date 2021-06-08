@@ -388,31 +388,8 @@ def train(train_loader, r, optimizer, epoch):
             f.close()
 
         
-        # swap out v0 para
-        if args.rank == 0 :
-            stage_weights=optimizer.swap_weights("v1")
-            if stage_weights is not None:
-                for layer in stage_weights:
-                    for layer_name in layer.items():
-                        r.swap_out(layer_name[1])
-                # r.swap_out(stage_weights)
-                        with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-                                f.write("send layer_name: "+str(layer_name[0])+"\n")
-                                # f.write("layer_weights_shape: "+str(layer_name[1].shape)+"\n")
-                                # f.write("layer_weights_dtype: "+str(layer_name[1].dtype)+"\n")
-                                f.close()
-                # with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-                #     f.write(str(args.rank)+"\n")
-                #     f.write("tensor_swap is cuda:  "+str(tensor_swap.is_cuda)+"\n")
-                #     f.close()
-
-
-        # if args.rank == 3 and i == 10:
-            
-            
-        #     r.get_stash_tensor()
-        
-        
+      
+               
         
         # Adjust learning rate
         adjust_learning_rate(optimizer, epoch, args.epochs, r, args.lr_policy, i, n)
@@ -459,19 +436,10 @@ def train(train_loader, r, optimizer, epoch):
             optimizer.zero_grad()
             
             
-
+        # yxy:check time to swap in
         if args.rank == 0 and optimizer.if_swap_in("v1") :
-            with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-                f.write("before recover  \n")
-                f.close()
-            
-    
             weights_swap_in = r.swap_in()
             
-            
-            with open("/home/mindspore/yxy/pipedream/runtime/image_classification/pipedream-yxy.log","a+") as f:
-                f.write("after recover  \n")
-                f.close()
             optimizer.recover_weights(weights_swap_in)
 
         optimizer.load_old_params()
@@ -481,6 +449,18 @@ def train(train_loader, r, optimizer, epoch):
             f.close()
             
         optimizer.load_new_params()
+        
+        # yxy:check time to swap out
+        if args.rank == 0 :
+            stage_weights=optimizer.swap_weights("v1")
+            if stage_weights is not None:                
+                for layer in stage_weights:
+                    for layer_name in layer.items():
+                        r.swap_out(layer_name[1])
+
+                optimizer.release_space()
+        
+        
         optimizer.step()
 
     # finish remaining backward passes

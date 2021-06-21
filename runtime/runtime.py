@@ -48,6 +48,7 @@ class StageRuntime:
                  target_tensor_names, configuration_maps, master_addr,
                  rank, local_rank, num_ranks_in_server, verbose_freq,
                  model_type, enable_recompute=False):
+        self.tensors_in_cpu = collections.deque()
         # Metadata needed for forward and backward pass within this stage.
         self.tensors = []
         self.gradients = {}
@@ -501,6 +502,13 @@ class StageRuntime:
             self.forward_stats.print_stats()
         self.forward_stats.reset_stats()
         self.forward_minibatch_id += 1
+        
+        self.tensors_in_cpu.append({})
+        for key in self.tensors[-1]:
+            print(f"type of self.tensors[-1][{key}]: {type(self.tensors[-1][key])}")
+            self.tensors_in_cpu[-1][key] = self.tensors[-1][key].cpu()
+            self.tensors[-1][key] = None
+        
 
     def _run_forward(self, tensors):
         # Perform forward pass through model (self.modules_with_dependencies already
@@ -569,6 +577,11 @@ class StageRuntime:
                 all_output_names_set.add(output_name)
 
         tensors = self.tensors.pop(0)
+        tensors = self.tensors_in_cpu.pop(0)
+        for key in tensors:
+            tensors[key] = tensors[key].gpu()
+        
+        
         # Set inputs, outputs, and output_gradients.
         # Only set outputs/output_gradients for tensors that are not inputs of
         # other modules in this stage.

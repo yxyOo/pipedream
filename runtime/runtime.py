@@ -504,14 +504,20 @@ class StageRuntime:
         self.forward_minibatch_id += 1
         
         self.tensors_in_cpu.append({})
+        print("=== to print tensors ===")
         for key in self.tensors[-1]:
             if key == 'target':
                 continue
             if key in self.receive_ranks: # 不然反向无法正常进行
                 continue
             if self.tensors[-1][key].is_cuda:
+                print(f"rank={self.rank}, tensors, key={key}, shape={self.tensors[-1][key].size()}, \
+                        dtype={self.tensors[-1][key].dtype}")
                 self.tensors_in_cpu[-1][key] = self.tensors[-1][key].cpu()
                 self.tensors[-1][key] = None
+        print("=== over print tensors ===")
+        
+        torch.cuda.empty_cache()
         
 
     def _run_forward(self, tensors):

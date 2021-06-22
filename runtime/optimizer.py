@@ -41,7 +41,7 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
             master_parameters, **optimizer_args)
         self.latest_version = Version()
         self.current_version = Version()
-        self.initialize_queue()
+        # self.initialize_queue()
         self.verbose_freq = verbose_freq
         self.batch_counter = 0
 
@@ -50,6 +50,9 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
             self.update_interval = self.num_versions
         else:
             self.update_interval = 1
+    
+    def set_rank(self, rank_):
+        self.rank = rank_
 
     def __getattr__(self, key):
         """Relay the unknown key to base_optimizer."""
@@ -67,13 +70,18 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
     def queue_append(self, item):
         state_dicts, version = item
         states_in_cpu = [{} for i in range(len(state_dicts))]
+        print("=== to print queue ===")
         for i, state_dict in enumerate(state_dicts):
             for key in state_dict:
                 if state_dict[key].is_cuda:
                     states_in_cpu[i][key] = state_dict[key].cpu()
+                    print(f"rank={self.rank}, queue, key={key}, shape={states_in_cpu[i][key].size()}, \
+                        dtype={states_in_cpu[i][key].dtype}")
                     state_dict[key] = None
+        print("=== over print queue ===")
         self.queue.append((state_dicts, version))
         self.states_in_cpu.append(states_in_cpu)
+        torch.cuda.empty_cache()
     
     def queue_get(self, index=0):
         state_dicts, version = self.queue[index]

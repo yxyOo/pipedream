@@ -231,6 +231,10 @@ def main():
                                           verbose_freq=args.verbose_frequency,
                                           macrobatch=args.macrobatch)
 
+    optimizer.set_rank(args.rank)
+    print(f"optimizer.rank={optimizer.rank}")
+    optimizer.initialize_queue()
+    
     if args.resume:
         optimizer.load_state_dict(checkpoint['optimizer'])
 

@@ -26,6 +26,9 @@ sys.path.append("..")
 import runtime
 import sgd
 
+import zq_logger
+zlog = zq_logger.get_logger()
+
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('--data_dir', type=str,
                     help='path to dataset')
@@ -361,6 +364,8 @@ def train(train_loader, r, optimizer, epoch):
         r.run_forward()
 
     for i in range(n - num_warmup_minibatches):
+        zlog.info(f"Rank: [{args.local_rank}]\t(before forward)\t"
+                    f"Memory: {float(torch.cuda.memory_allocated())/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
         # perform forward pass
         r.run_forward()
 
@@ -408,8 +413,12 @@ def train(train_loader, r, optimizer, epoch):
         else:
             optimizer.zero_grad()
         optimizer.load_old_params()
+        zlog.info(f"Rank: [{args.local_rank}]\t(before backward)\t"
+                    f"Memory: {float(torch.cuda.memory_allocated())/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
         r.run_backward()
         optimizer.load_new_params()
+        zlog.info(f"Rank: [{args.local_rank}]\t(before step)\t"
+                    f"Memory: {float(torch.cuda.memory_allocated())/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
         optimizer.step()
 
     # finish remaining backward passes

@@ -507,7 +507,8 @@ class StageRuntime:
         for key in self.tensors[-1]:
             if key == 'target':
                 continue
-            print(f"rank={self.rank}\t type of self.tensors[-1][{key}]={type(self.tensors[-1][key])}\t requires_grad={self.tensors[-1][key].requires_grad}")
+            if key in self.receive_ranks: # 不然反向无法正常进行
+                continue
             if self.tensors[-1][key].is_cuda:
                 self.tensors_in_cpu[-1][key] = self.tensors[-1][key].cpu()
                 self.tensors[-1][key] = None
@@ -583,9 +584,6 @@ class StageRuntime:
         tensors_in_cpu = self.tensors_in_cpu.pop(0)
         for key in tensors_in_cpu:
             tensors[key] = tensors_in_cpu[key].cuda(self.local_rank)
-            print(f"rank={self.rank}, key={key}, tensors[key].requires_grad={tensors[key].requires_grad}")
-        for key in tensors:
-            print(f"rank={self.rank},\ttensors[{key}]")
         
         
         # Set inputs, outputs, and output_gradients.
@@ -607,41 +605,26 @@ class StageRuntime:
                 if input_name not in all_output_names_set:
                     inputs[input_name] = tensors[input_name]
 
-        for key in inputs:
-            print(f"rank={self.rank},\tinputs[{key}],\t requires_grad={inputs[key].requires_grad}")
-
-        for key in outputs:
-            print(f"rank={self.rank},\t outputs[{key}],\t requires_grad={outputs[key].requires_grad}")
-        
         # Hook to record input gradients.
         def hook_wrapper(input_name):
             def hook(input_gradient):
-                print(f"rank={self.rank}, in hook, input_name={input_name}")
                 input_gradients[input_name] = input_gradient
             return hook
 
         for input_name in inputs:
             if input_name != "input0" and input_name != "input1" and input_name != "input2" \
                     and inputs[input_name].requires_grad:
-                print(f"rank={self.rank}, register_hook, key={input_name}")
                 inputs[input_name].register_hook(hook_wrapper(input_name))
 
         if "loss" in outputs:
             outputs["loss"] *= self.loss_scale
 
         # Perform backward pass.
-        
-        print(f"rank={self.rank}, input keys of backward: [{[output_names for output_names in outputs]}], input values of backward:\
-            {tuple([outputs[output_name] for output_name in outputs])}, {tuple([output_gradients[output_name] for output_name in outputs])}\n")
         torch.autograd.backward(tuple([outputs[output_name] for output_name in outputs]),
                                 grad_tensors=tuple([output_gradients[output_name]
                                                     for output_name in outputs]))
 
     
-        for key in input_gradients:
-            print(f"rank={self.rank},\t input_gradients[{key}]")
-        print(f"rank={self.rank}, input_gradients={input_gradients}")
-
         # Input tensors don't need gradients.
         for input_name in inputs:
             if not inputs[input_name].requires_grad:

@@ -628,6 +628,9 @@ class StageRuntime:
             outputs["loss"] *= self.loss_scale
 
         # Perform backward pass.
+        
+        print(f"rank={self.rank}, input keys of backward: [{[output_names for output_names in outputs]}], input values of backward:\
+            {tuple([outputs[output_name] for output_name in outputs])}, {tuple([output_gradients[output_name] for output_name in outputs])}\n")
         torch.autograd.backward(tuple([outputs[output_name] for output_name in outputs]),
                                 grad_tensors=tuple([output_gradients[output_name]
                                                     for output_name in outputs]))

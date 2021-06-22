@@ -57,9 +57,35 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
 
     def initialize_queue(self):
         self.queue = deque(maxlen=self.num_versions)
+        self.states_in_cpu = deque(maxlen=self.num_versions)
         for i in range(self.num_versions):
-            self.queue.append(self.get_params(clone=True))
-        self.buffered_state_dicts = self.queue[0][0]
+            # self.queue.append(self.get_params(clone=True))
+            self.queue_append(self.get_params(clone=True))
+        # self.buffered_state_dicts = self.queue[0][0]
+        self.buffered_state_dicts = self.queue_get(0)[0]
+        
+    def queue_append(self, item):
+        state_dicts, version = item
+        states_in_cpu = [{} for i in range(len(state_dicts))]
+        for i, state_dict in enumerate(state_dicts):
+            for key in state_dict:
+                if state_dict[key].is_cuda:
+                    states_in_cpu[i][key] = state_dict[key].cpu()
+                    state_dict[key] = None
+        self.queue.append((state_dicts, version))
+        self.states_in_cpu.append(states_in_cpu)
+    
+    def queue_get(self, index=0):
+        state_dicts, version = self.queue[index]
+        states_in_cpu = self.states_in_cpu[0]
+        for i in range(len(states_in_cpu)):
+            for key in states_in_cpu[i]:
+                state_dicts[i][key] = states_in_cpu[i][key].cuda()
+        return state_dicts, version
+        
+            
+        
+        
 
     def get_params(self, clone):
         if clone:
@@ -109,11 +135,14 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
 
     def load_old_params(self):
         if self.num_versions > 1:
-            self.set_params(*self.queue[0])
+            # self.set_params(*self.queue[0])
+            self.set_params(*self.queue_get(0))
 
     def load_new_params(self):
         if self.num_versions > 1:
-            self.set_params(*self.queue[-1])
+            # self.set_params(*self.queue[-1])
+            self.set_params(*self.queue_get(-1))
+
 
     def zero_grad(self):
         if self.batch_counter % self.update_interval == 0:
@@ -155,8 +184,10 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
                                                      self.master_parameters)
         self.latest_version = self.latest_version.incr()
         if self.num_versions > 1:
-            self.buffered_state_dicts = self.queue[0][0]
-            self.queue.append(self.get_params(clone=False))
+            # self.buffered_state_dicts = self.queue[0][0]
+            # self.queue.append(self.get_params(clone=False))
+            self.buffered_state_dicts = self.queue_get(0)[0]
+            self.queue_append(self.get_params(clone=False))
 
         if log_timing:
             print("Optimizer step took: %.3f" % (time.time() - start_time))

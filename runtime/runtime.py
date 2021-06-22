@@ -616,12 +616,14 @@ class StageRuntime:
         # Hook to record input gradients.
         def hook_wrapper(input_name):
             def hook(input_gradient):
+                print(f"rank={self.rank}, in hook, input_name={input_name}")
                 input_gradients[input_name] = input_gradient
             return hook
 
         for input_name in inputs:
             if input_name != "input0" and input_name != "input1" and input_name != "input2" \
                     and inputs[input_name].requires_grad:
+                print(f"rank={self.rank}, register_hook, key={input_name}")
                 inputs[input_name].register_hook(hook_wrapper(input_name))
 
         if "loss" in outputs:
@@ -638,6 +640,7 @@ class StageRuntime:
     
         for key in input_gradients:
             print(f"rank={self.rank},\t input_gradients[{key}]")
+        print(f"rank={self.rank}, input_gradients={input_gradients}")
 
         # Input tensors don't need gradients.
         for input_name in inputs:

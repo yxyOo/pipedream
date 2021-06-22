@@ -48,7 +48,7 @@ class StageRuntime:
                  target_tensor_names, configuration_maps, master_addr,
                  rank, local_rank, num_ranks_in_server, verbose_freq,
                  model_type, enable_recompute=False):
-        self.tensors_in_cpu = collections.deque()
+        self.tensors_in_cpu = []
         # Metadata needed for forward and backward pass within this stage.
         self.tensors = []
         self.gradients = {}
@@ -505,9 +505,12 @@ class StageRuntime:
         
         self.tensors_in_cpu.append({})
         for key in self.tensors[-1]:
-            print(f"type of self.tensors[-1][{key}]: {type(self.tensors[-1][key])}")
-            self.tensors_in_cpu[-1][key] = self.tensors[-1][key].cpu()
-            self.tensors[-1][key] = None
+            if key == 'target':
+                continue
+            print(f"rank={self.rank}\t type of self.tensors[-1][{key}]={type(self.tensors[-1][key])}\t requires_grad={self.tensors[-1][key].requires_grad}")
+            if self.tensors[-1][key].is_cuda:
+                self.tensors_in_cpu[-1][key] = self.tensors[-1][key].cpu()
+                self.tensors[-1][key] = None
         
 
     def _run_forward(self, tensors):
@@ -577,9 +580,12 @@ class StageRuntime:
                 all_output_names_set.add(output_name)
 
         tensors = self.tensors.pop(0)
-        tensors = self.tensors_in_cpu.pop(0)
+        tensors_in_cpu = self.tensors_in_cpu.pop(0)
+        for key in tensors_in_cpu:
+            tensors[key] = tensors_in_cpu[key].cuda(self.local_rank)
+            print(f"rank={self.rank}, key={key}, tensors[key].requires_grad={tensors[key].requires_grad}")
         for key in tensors:
-            tensors[key] = tensors[key].gpu()
+            print(f"rank={self.rank},\ttensors[{key}]")
         
         
         # Set inputs, outputs, and output_gradients.
@@ -601,6 +607,12 @@ class StageRuntime:
                 if input_name not in all_output_names_set:
                     inputs[input_name] = tensors[input_name]
 
+        for key in inputs:
+            print(f"rank={self.rank},\tinputs[{key}],\t requires_grad={inputs[key].requires_grad}")
+
+        for key in outputs:
+            print(f"rank={self.rank},\t outputs[{key}],\t requires_grad={outputs[key].requires_grad}")
+        
         # Hook to record input gradients.
         def hook_wrapper(input_name):
             def hook(input_gradient):
@@ -619,6 +631,10 @@ class StageRuntime:
         torch.autograd.backward(tuple([outputs[output_name] for output_name in outputs]),
                                 grad_tensors=tuple([output_gradients[output_name]
                                                     for output_name in outputs]))
+
+    
+        for key in input_gradients:
+            print(f"rank={self.rank},\t input_gradients[{key}]")
 
         # Input tensors don't need gradients.
         for input_name in inputs:

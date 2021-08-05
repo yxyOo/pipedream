@@ -504,8 +504,10 @@ class StageRuntime:
         self.forward_minibatch_id += 1
         
         self.tensors_in_cpu.append({})
+        all_output_names = self.modules_with_dependencies.all_output_names()
         print("=== to print tensors ===")
         for key in self.tensors[-1]:
+            print(f"yxy_check_key:{self.rank} {key}")
             if key == 'target':
                 continue
             if key in self.receive_ranks: # 不然反向无法正常进行
@@ -513,6 +515,13 @@ class StageRuntime:
             if self.tensors[-1][key].is_cuda:
                 print(f"rank={self.rank}, tensors, key={key}, shape={self.tensors[-1][key].size()}, \
                         dtype={self.tensors[-1][key].dtype}")
+                print("requires_grad: ", self.tensors[-1][key].requires_grad)
+                print("key: ", key)
+                for outname in all_output_names:
+                    if key == outname[0] and key!="loss":
+                        print(f"yxy_backup_check_all_output_names[0]:{self.rank} {key}")
+                        print(f"yxy_check_is_leaf:{self.rank} {self.tensors[-1][key].is_leaf}")
+                        self.tensors[-1][key].backup(self.tensors[-1][key].data) 
                 self.tensors_in_cpu[-1][key] = self.tensors[-1][key].cpu()
                 self.tensors[-1][key] = None
         print("=== over print tensors ===")
@@ -526,6 +535,7 @@ class StageRuntime:
         modules = self.modules_with_dependencies.modules()
         all_input_names = self.modules_with_dependencies.all_input_names()
         all_output_names = self.modules_with_dependencies.all_output_names()
+        print(f"yxy_check_outputname{self.rank} {all_output_names}")
         for i, (module, input_names, output_names) in \
                 enumerate(zip(modules, all_input_names, all_output_names)):
             if i == (len(modules) - 1) and self.is_criterion:
@@ -559,6 +569,7 @@ class StageRuntime:
             loss_per_token = loss_per_batch / tensors["target_length"][0].item()
             self.loss = loss_per_token
         elif self.is_criterion:
+            print(f"yxy_check_loss:{self.rank} {output_names[0]}")
             self.loss = tensors[output_names[0]]
         else:
             self.loss = 1
@@ -590,8 +601,11 @@ class StageRuntime:
         tensors_in_cpu = self.tensors_in_cpu.pop(0)
         for key in tensors_in_cpu:
             tensors[key] = tensors_in_cpu[key].cuda(self.local_rank)
-        
-        
+            for outname in all_output_names:
+                if key == outname[0] and key!="loss":
+                    print(f"yxy_restore_check_all_output_names[0]:{self.rank} {key}")
+                    tensors[key].restore(tensors[key].data)
+            
         # Set inputs, outputs, and output_gradients.
         # Only set outputs/output_gradients for tensors that are not inputs of
         # other modules in this stage.
@@ -625,6 +639,7 @@ class StageRuntime:
         if "loss" in outputs:
             outputs["loss"] *= self.loss_scale
 
+        
         # Perform backward pass.
         torch.autograd.backward(tuple([outputs[output_name] for output_name in outputs]),
                                 grad_tensors=tuple([output_gradients[output_name]

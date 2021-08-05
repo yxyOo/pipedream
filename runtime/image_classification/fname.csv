@@ -1,0 +1,8 @@
+{"AddmmBackward",{"mat1_", "mat2_"}},
+{"TBackward",{}},
+{"FusedDropoutBackward",{"result1_"}},
+{"ThresholdBackward1",{"result_"}},
+{"ViewBackward",{}},
+{"MaxPool2DWithIndicesBackward",{"self_", "result1_"}},
+{"ThnnConv2DBackward",{"self_", "weight_", "finput_", "fgrad_input_"}},
+{"CloneBackward",{}},

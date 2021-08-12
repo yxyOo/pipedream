@@ -6,9 +6,10 @@ import itertools
 import time
 import torch
 import torch.distributed as dist
-
+import torch.backends.cudnn as cudnn
 import communication
 import runtime_utilities
+import torch.nn.parallel
 
 IMAGE_CLASSIFICATION = "image_classification"
 TRANSLATION = "translation"
@@ -522,8 +523,13 @@ class StageRuntime:
                         print(f"yxy_backup_check_all_output_names[0]:{self.rank} {key}")
                         print(f"yxy_check_is_leaf:{self.rank} {self.tensors[-1][key].is_leaf}")
                         self.tensors[-1][key].backup(self.tensors[-1][key].data) 
+                print(f"stage_{self.rank}_{self.tensors[-1][key].shape} {self.tensors[-1][key].type()}")
+                print(f"stage_{self.rank} before to_cpu\t"
+                    f"Memory: {float(torch.cuda.memory_allocated())/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
                 self.tensors_in_cpu[-1][key] = self.tensors[-1][key].cpu()
                 self.tensors[-1][key] = None
+                print(f"stage_{self.rank} after to_cpu\t"
+                    f"Memory: {float(torch.cuda.memory_allocated())/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
         print("=== over print tensors ===")
         
         torch.cuda.empty_cache()

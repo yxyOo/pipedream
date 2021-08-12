@@ -522,14 +522,29 @@ class StageRuntime:
                     if key == outname[0] and key!="loss":
                         print(f"yxy_backup_check_all_output_names[0]:{self.rank} {key}")
                         print(f"yxy_check_is_leaf:{self.rank} {self.tensors[-1][key].is_leaf}")
+                        print(f"stage_{self.rank} before backup\t"
+                            f"Memory: {float(torch.cuda.memory_allocated(device=self.rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=self.rank))/10**9:.3f})")
+                        
+                
                         self.tensors[-1][key].backup(self.tensors[-1][key].data) 
-                print(f"stage_{self.rank}_{self.tensors[-1][key].shape} {self.tensors[-1][key].type()}")
-                print(f"stage_{self.rank} before to_cpu\t"
-                    f"Memory: {float(torch.cuda.memory_allocated())/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
+                        print(f"stage_{self.rank} after backup\t"
+                            f"Memory: {float(torch.cuda.memory_allocated(device=self.rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=self.rank))/10**9:.3f})")
+                
+                to_cpu_shape=self.tensors[-1][key].shape
+                to_cpu_mem=self.tensors[-1][key].element_size() *self.tensors[-1][key].nelement()/(1024*1024)
+                before_to_cpu_mem = float(torch.cuda.memory_allocated(device=self.rank))
+                # print(f"stage_{self.rank} before to_cpu\t"
+                #     f"Memory: {float(torch.cuda.memory_allocated(device=self.rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=self.rank))/10**9:.3f})")
                 self.tensors_in_cpu[-1][key] = self.tensors[-1][key].cpu()
                 self.tensors[-1][key] = None
-                print(f"stage_{self.rank} after to_cpu\t"
-                    f"Memory: {float(torch.cuda.memory_allocated())/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
+                after_to_cpu_mem=float(torch.cuda.memory_allocated(device=self.rank))
+                if before_to_cpu_mem == after_to_cpu_mem :
+                    print(f"Before and after the to_cpu is not change: stage_{self.rank} {key} {to_cpu_shape} {float(to_cpu_mem):.3f} MB")
+                else:
+                    print(f"Before and after the to_cpu is changed: stage_{self.rank} {key} {to_cpu_shape} {float((before_to_cpu_mem-after_to_cpu_mem)/10**9):.3f} GB")
+                    
+                # print(f"stage_{self.rank} after to_cpu\t"
+                #     f"Memory: {float(torch.cuda.memory_allocated(device=self.rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=self.rank))/10**9:.3f})")
         print("=== over print tensors ===")
         
         torch.cuda.empty_cache()

@@ -369,7 +369,7 @@ def train(train_loader, r, optimizer, epoch):
 
     for i in range(n - num_warmup_minibatches):
         zlog.info(f"Rank: [{args.local_rank}]\t(before forward)\t"
-                    f"Memory: {float(torch.cuda.memory_allocated())/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
+                    f"Memory: {float(torch.cuda.memory_allocated(device=args.local_rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=args.local_rank))/10**9:.3f})")
         # perform forward pass
         r.run_forward()
 
@@ -401,14 +401,14 @@ def train(train_loader, r, optimizer, epoch):
                        epoch, i, n, batch_time=batch_time,
                        epoch_time=epoch_time, full_epoch_time=full_epoch_time,
                        loss=losses, top1=top1, top5=top5,
-                       memory=(float(torch.cuda.memory_allocated()) / 10**9),
-                       cached_memory=(float(torch.cuda.memory_cached()) / 10**9)))
+                       memory=(float(torch.cuda.memory_allocated(device=args.local_rank)) / 10**9),
+                       cached_memory=(float(torch.cuda.memory_cached(device=args.local_rank)) / 10**9)))
                 import sys; sys.stdout.flush()
         else:
             if i % args.print_freq == 0:
                 print('Epoch: [{0}][{1}/{2}]\tMemory: {memory:.3f} ({cached_memory:.3f})'.format(
-                       epoch, i, n, memory=(float(torch.cuda.memory_allocated()) / 10**9),
-                       cached_memory=(float(torch.cuda.memory_cached()) / 10**9)))
+                       epoch, i, n, memory=(float(torch.cuda.memory_allocated(device=args.local_rank)) / 10**9),
+                       cached_memory=(float(torch.cuda.memory_cached(device=args.local_rank)) / 10**9)))
                 import sys; sys.stdout.flush()
 
         # perform backward pass
@@ -418,11 +418,11 @@ def train(train_loader, r, optimizer, epoch):
             optimizer.zero_grad()
         optimizer.load_old_params()
         zlog.info(f"Rank: [{args.local_rank}]\t(before backward)\t"
-                    f"Memory: {float(torch.cuda.memory_allocated())/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
+                    f"Memory: {float(torch.cuda.memory_allocated(device=args.local_rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=args.local_rank))/10**9:.3f})")
         r.run_backward()
         optimizer.load_new_params()
         zlog.info(f"Rank: [{args.local_rank}]\t(before step)\t"
-                    f"Memory: {float(torch.cuda.memory_allocated())/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
+                    f"Memory: {float(torch.cuda.memory_allocated(device=args.local_rank))/10**9:.3f} ({float(torch.cuda.memory_cached())/10**9:.3f})")
         optimizer.step()
 
     # finish remaining backward passes
@@ -497,8 +497,8 @@ def validate(val_loader, r, epoch):
                           'Prec@5: {top5.val:.3f} ({top5.avg:.3f})'.format(
                            epoch, i, n, batch_time=batch_time, loss=losses,
                            top1=top1, top5=top5,
-                           memory=(float(torch.cuda.memory_allocated()) / 10**9),
-                           cached_memory=(float(torch.cuda.memory_cached()) / 10**9)))
+                           memory=(float(torch.cuda.memory_allocated(device=args.local_rank)) / 10**9),
+                           cached_memory=(float(torch.cuda.memory_cached(device=args.local_rank)) / 10**9)))
                     import sys; sys.stdout.flush()
 
         if is_last_stage():

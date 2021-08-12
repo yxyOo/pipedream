@@ -71,6 +71,8 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
         state_dicts, version = item
         states_in_cpu = [{} for i in range(len(state_dicts))]
         print("=== to print queue ===")
+        print(f"stage_{self.rank} before weights\t"
+                            f"Memory: {float(torch.cuda.memory_allocated(device=self.rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=self.rank))/10**9:.3f})")
         for i, state_dict in enumerate(state_dicts):
             for key in state_dict:
                 if state_dict[key].is_cuda:
@@ -78,6 +80,8 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
                     print(f"rank={self.rank}, queue, key={key}, shape={states_in_cpu[i][key].size()}, \
                         dtype={states_in_cpu[i][key].dtype}")
                     state_dict[key] = None
+        print(f"stage_{self.rank} after weights\t"
+                            f"Memory: {float(torch.cuda.memory_allocated(device=self.rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=self.rank))/10**9:.3f})")
         print("=== over print queue ===")
         self.queue.append((state_dicts, version))
         self.states_in_cpu.append(states_in_cpu)

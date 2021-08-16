@@ -256,6 +256,9 @@ def main():
             num_versions=num_versions, lr=args.lr, betas=(0.9,0.999),
             weight_decay=args.weight_decay, verbose_freq=args.verbose_frequency,
             macrobatch=args.macrobatch)
+        optimizer.set_rank(args.rank)
+        print(f"optimizer.rank={optimizer.rank}")
+        optimizer.initialize_queue()
     else:
         optimizer = sgd.SGDWithWeightStashing(
             modules=r.modules(), master_parameters=r.master_parameters,

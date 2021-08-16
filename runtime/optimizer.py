@@ -41,7 +41,7 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
             master_parameters, **optimizer_args)
         self.latest_version = Version()
         self.current_version = Version()
-        self.initialize_queue()
+        # self.initialize_queue()
         self.verbose_freq = verbose_freq
         self.batch_counter = 0
 
@@ -50,17 +50,47 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
             self.update_interval = self.num_versions
         else:
             self.update_interval = 1
-
+    def set_rank(self, rank_):
+        self.rank = rank_
     def __getattr__(self, key):
         """Relay the unknown key to base_optimizer."""
         return getattr(self.base_optimizer, key)
 
     def initialize_queue(self):
         self.queue = deque(maxlen=self.num_versions)
+        self.states_in_cpu = deque(maxlen=self.num_versions)
         for i in range(self.num_versions):
-            self.queue.append(self.get_params(clone=True))
-        self.buffered_state_dicts = self.queue[0][0]
-
+            self.queue_append(self.get_params(clone=True))
+        # self.buffered_state_dicts = self.queue[0][0]
+        self.buffered_state_dicts = self.queue_get(0)[0]
+    def queue_append(self, item):
+        state_dicts, version = item
+        states_in_cpu = [{} for i in range(len(state_dicts))]
+        print("=== to print queue ===")
+        print(f"stage_{self.rank} before weights\t"
+                            f"Memory: {float(torch.cuda.memory_allocated(device=self.rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=self.rank))/10**9:.3f})")
+        for i, state_dict in enumerate(state_dicts):
+            for key in state_dict:
+                if state_dict[key].is_cuda:
+                    states_in_cpu[i][key] = state_dict[key].cpu()
+                    print(f"rank={self.rank}, queue, key={key}, shape={states_in_cpu[i][key].size()}, \
+                        dtype={states_in_cpu[i][key].dtype}")
+                    state_dict[key] = None
+        print(f"stage_{self.rank} after weights\t"
+                            f"Memory: {float(torch.cuda.memory_allocated(device=self.rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=self.rank))/10**9:.3f})")
+        print("=== over print queue ===")
+        self.queue.append((state_dicts, version))
+        self.states_in_cpu.append(states_in_cpu)
+        torch.cuda.empty_cache()
+    
+    def queue_get(self, index=0):
+        state_dicts, version = self.queue[index]
+        states_in_cpu = self.states_in_cpu[0]
+        for i in range(len(states_in_cpu)):
+            for key in states_in_cpu[i]:
+                state_dicts[i][key] = states_in_cpu[i][key].cuda()
+        return state_dicts, version
+        
     def get_params(self, clone):
         if clone:
             state_dicts = []
@@ -109,11 +139,13 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
 
     def load_old_params(self):
         if self.num_versions > 1:
-            self.set_params(*self.queue[0])
+            # self.set_params(*self.queue[0])
+            self.set_params(*self.queue_get(0))
 
     def load_new_params(self):
         if self.num_versions > 1:
-            self.set_params(*self.queue[-1])
+            # self.set_params(*self.queue[-1])
+            self.set_params(*self.queue_get(-1))
 
     def zero_grad(self):
         if self.batch_counter % self.update_interval == 0:
@@ -155,8 +187,10 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
                                                      self.master_parameters)
         self.latest_version = self.latest_version.incr()
         if self.num_versions > 1:
-            self.buffered_state_dicts = self.queue[0][0]
-            self.queue.append(self.get_params(clone=False))
+            # self.buffered_state_dicts = self.queue[0][0]
+            # self.queue.append(self.get_params(clone=False))
+            self.buffered_state_dicts = self.queue_get(0)[0]
+            self.queue_append(self.get_params(clone=False))
 
         if log_timing:
             print("Optimizer step took: %.3f" % (time.time() - start_time))

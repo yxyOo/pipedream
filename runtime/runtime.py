@@ -48,6 +48,7 @@ class StageRuntime:
                  target_tensor_names, configuration_maps, master_addr,
                  rank, local_rank, num_ranks_in_server, verbose_freq,
                  model_type, enable_recompute=False):
+        self.tensors_in_cpu = []
         # Metadata needed for forward and backward pass within this stage.
         self.tensors = []
         self.gradients = {}
@@ -502,6 +503,30 @@ class StageRuntime:
         self.forward_stats.reset_stats()
         self.forward_minibatch_id += 1
 
+        self.tensors_in_cpu.append({})
+        all_output_names = self.modules_with_dependencies.all_output_names()
+        print("=== to print tensors ===")
+        for key in self.tensors[-1]:
+            print(f"yxy_check_key:{self.rank} {key}")
+            if key == 'target':
+                continue
+            if key in self.receive_ranks: # 不然反向无法正常进行
+                continue
+            if self.tensors[-1][key].is_cuda:
+                print(f"rank={self.rank}, tensors, key={key}, shape={self.tensors[-1][key].size()}, \
+                        dtype={self.tensors[-1][key].dtype}")
+                print("requires_grad: ", self.tensors[-1][key].requires_grad)
+                print("key: ", key)
+                for outname in all_output_names:
+                    if key == outname[0] and key!="loss":
+                        print(f"yxy_backup_check_all_output_names[0]:{self.rank} {key}")
+                        print(f"yxy_check_is_leaf:{self.rank} {self.tensors[-1][key].is_leaf}")
+                        self.tensors[-1][key].backup(self.tensors[-1][key].data) 
+                self.tensors_in_cpu[-1][key] = self.tensors[-1][key].cpu()
+                self.tensors[-1][key] = None
+        print("=== over print tensors ===")
+        
+        torch.cuda.empty_cache()
     def _run_forward(self, tensors):
         # Perform forward pass through model (self.modules_with_dependencies already
         # has modules in topological order).
@@ -569,6 +594,13 @@ class StageRuntime:
                 all_output_names_set.add(output_name)
 
         tensors = self.tensors.pop(0)
+        tensors_in_cpu = self.tensors_in_cpu.pop(0)
+        for key in tensors_in_cpu:
+            tensors[key] = tensors_in_cpu[key].cuda(self.local_rank)
+            for outname in all_output_names:
+                if key == outname[0] and key!="loss":
+                    print(f"yxy_restore_check_all_output_names[0]:{self.rank} {key}")
+                    tensors[key].restore(tensors[key].data)
         # Set inputs, outputs, and output_gradients.
         # Only set outputs/output_gradients for tensors that are not inputs of
         # other modules in this stage.

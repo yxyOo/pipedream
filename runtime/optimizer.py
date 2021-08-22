@@ -67,17 +67,20 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
         state_dicts, version = item
         states_in_cpu = [{} for i in range(len(state_dicts))]
         print("=== to print queue ===")
-        print(f"stage_{self.rank} before weights\t"
-                            f"Memory: {float(torch.cuda.memory_allocated(device=self.rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=self.rank))/10**9:.3f})")
+        mem0 = float(torch.cuda.memory_allocated(device=self.rank))/1024/1024
+        mem0_cached = float(torch.cuda.memory_cached(device=self.rank))/1024/1024
+        print(f"rank={self.rank}\t(MB)(weights.cpu) mem0={mem0}\tmem0_cached={mem0_cached}")
+        to_cpu_size = 0
         for i, state_dict in enumerate(state_dicts):
             for key in state_dict:
                 if state_dict[key].is_cuda:
+                    to_cpu_size += state_dict[key].element_size() * state_dict[key].nelement()/1024/1024
                     states_in_cpu[i][key] = state_dict[key].cpu()
                     print(f"rank={self.rank}, queue, key={key}, shape={states_in_cpu[i][key].size()}, \
                         dtype={states_in_cpu[i][key].dtype}")
                     state_dict[key] = None
-        print(f"stage_{self.rank} after weights\t"
-                            f"Memory: {float(torch.cuda.memory_allocated(device=self.rank))/10**9:.3f} ({float(torch.cuda.memory_cached(device=self.rank))/10**9:.3f})")
+        mem1 = float(torch.cuda.memory_allocated(device=self.rank))/1024/1024
+        print(f"rank={self.rank}\t(MB)(weights.cpu) mem0={mem0}\tmem1={mem1}\tto_cpu_size={to_cpu_size}")
         print("=== over print queue ===")
         self.queue.append((state_dicts, version))
         self.states_in_cpu.append(states_in_cpu)
@@ -86,9 +89,23 @@ class OptimizerWithWeightStashing(torch.optim.Optimizer):
     def queue_get(self, index=0):
         state_dicts, version = self.queue[index]
         states_in_cpu = self.states_in_cpu[0]
+
+        torch.cuda.empty_cache()
+        mem0 = float(torch.cuda.memory_allocated(device=self.rank))/1024/1024
+        mem0_cached = float(torch.cuda.memory_cached(device=self.rank))/1024/1024
+        print(f"rank={self.rank}\t(MB)(weights.cuda) mem0={mem0}\tmem0_cached={mem0_cached}")
         for i in range(len(states_in_cpu)):
             for key in states_in_cpu[i]:
-                state_dicts[i][key] = states_in_cpu[i][key].cuda()
+                try:
+                    state_dicts[i][key] = states_in_cpu[i][key].cuda()
+                except:
+                    space_to_allocate = states_in_cpu[i][key].element_size() * states_in_cpu[i][key].nelement() / 1024 / 1024
+                    mem0 = float(torch.cuda.memory_allocated(device=self.rank))/1024/1024
+                    mem0_cached = float(torch.cuda.memory_cached(device=self.rank))/1024/1024
+                    print(f"rank={self.rank}\t(MB)(weights.cuda just before OOM) mem0={mem0}\tmem0_cached={mem0_cached}\tspace_to_allocate={space_to_allocate}")
+                    import traceback
+                    print(traceback.format_exc())
+                    raise MemoryError
         return state_dicts, version
         
     def get_params(self, clone):

@@ -368,14 +368,22 @@ def train(train_loader, r, optimizer, epoch):
     if args.verbose_frequency > 0:
         print("Letting in %d warm-up minibatches" % num_warmup_minibatches)
         print("Running training for %d minibatches" % n)
-
+    sum_dur_F=0
+    sum_dur_B=0
     # start num_warmup_minibatches forward passes
     for i in range(num_warmup_minibatches):
+        start_F = time.time() # sec
         r.run_forward()
+        end_F = time.time() # sec
+        sum_dur_F += end_F - start_F
 
     for i in range(n - num_warmup_minibatches):
+        start_F = time.time() # sec
         # perform forward pass
         r.run_forward()
+        end_F = time.time() # sec
+        sum_dur_F += end_F - start_F
+        print(f"--rank={args.rank}, iteration={i} , duration_forward={end_F - start_F},avg_duration_forward={sum_dur_F/(i+num_warmup_minibatches+1)}")
 
         if is_last_stage():
             # measure accuracy and record loss
@@ -413,8 +421,13 @@ def train(train_loader, r, optimizer, epoch):
         else:
             optimizer.zero_grad()
         optimizer.load_old_params()
-
+        print(f"--rank={args.rank}, before backward memory_allocated={(float(torch.cuda.memory_allocated()) / 10**9)},\
+                       memory_cached={(float(torch.cuda.memory_cached()) / 10**9)}\n")
+        start_B = time.time() # sec
         r.run_backward()
+        end_B = time.time() # sec
+        sum_dur_B += end_B - start_B
+        print(f"--rank={args.rank},  iteration={i} , duration_backward={sum_dur_B}")
         optimizer.load_new_params()
         optimizer.step()
 

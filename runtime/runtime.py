@@ -488,10 +488,13 @@ class StageRuntime:
     def run_forward(self, recompute_step=False):
         """Run forward pass.
         """
+        
         # Receive tensors from previous worker.
+        start_F_commu=time.time()
         self.receive_tensors_forward()
         tensors = self.tensors[-1]
-
+        end_F_commu=time.time()
+        print(f"--rank={self.rank}, duration forward communication={end_F_commu-start_F_commu}")
         # Run forward pass.
         self._run_forward(tensors)
 
@@ -546,8 +549,11 @@ class StageRuntime:
             self.loss = 1
 
     def run_backward(self):
+        start_B_commu=time.time()
         # Receive input gradients needed for backward pass.
         self.receive_tensors_backward()
+        end_B_commu=time.time()
+        print(f"--rank={self.rank}, duration backward communication={end_B_commu-start_B_commu}")
         # Backward pass through modules in reverse order.
         inputs = {}
         outputs = {}

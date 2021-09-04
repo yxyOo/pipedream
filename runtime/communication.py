@@ -583,6 +583,23 @@ class CommunicationHandler(object):
     def recv(self, tensor_name, forward_minibatch_id,
              backward_minibatch_id, backward=False):
         if backward:
+
+            elesum_bs=0
+            elesum_br=0
+            elesum_fr=0
+            elesum_fs=0
+            for d1 in self.backward_send_queues:
+                elesum_bs += len(self.backward_send_queues[d1])
+            for d1 in self.backward_receive_queues:
+                elesum_br += len(self.backward_receive_queues[d1])
+            for d1 in self.forward_send_queues:
+                elesum_bs += len(self.forward_send_queues[d1])
+            for d1 in self.forward_receive_queues:
+                elesum_bs += len(self.forward_receive_queues[d1])
+            print(f"--rank={self.rank}, elesum_bs={elesum_bs},\
+                 elesum_br={elesum_br},\
+                      lesum_fs={elesum_fs},\
+                          elesum_fr={elesum_fr},")
             index = (backward_minibatch_id + self.rank_in_stage) % \
                 len(self.backward_receive_queues[tensor_name])
             tensor = self.backward_receive_queues[tensor_name][

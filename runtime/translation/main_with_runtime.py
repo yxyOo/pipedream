@@ -175,10 +175,42 @@ def main():
         # as much as 1.5x slower in a full DP configuration.
         with torch.no_grad():
             output_tensors = stage(*tuple(input_tensors))
+            
+        def pp(t,l):
+            for i,v in enumerate(t):
+                indent = "\t"*l
+                print(f"{indent}[{i}]:type={type(v)}")
+                if type(v) is tuple:
+                    pp(v, l+1)
+
+        print(f"[before] rank={args.rank}")
+        print(f"output_tensors:")
+        pp(output_tensors, 0)
+        print(f"outputs:")
+        pp(outputs, 0)
+            
+            
         if not type(output_tensors) is tuple:
+            print("walk here", 180)
+            print(f"output_tensors'type is {type(output_tensors)}")
             output_tensors = [output_tensors]
+        # else:
+        #     print("walk here", 184)
+        #     output_tensors = [output_tensors]
+
+        print(f"[after] rank={args.rank}")
+        print(f"output_tensors:")
+        pp(output_tensors, 0)
+        print(f"outputs:")
+        pp(outputs, 0)
+            
         for output, output_tensor in zip(outputs,
                                          list(output_tensors)):
+            # print(f"output_tensor={output_tensor}")
+            print(f"stage={stage}")
+            print(f"rank={args.rank}")
+            
+            print(f"len(output_tensor)={len(output_tensor)}")
             training_tensor_shapes[output] = list(output_tensor.size())
             dtypes[output] = output_tensor.dtype
 
@@ -249,6 +281,8 @@ def main():
 
     # TODO: make this configurable by args
     use_adam_optimizer = True
+    import colorful as cf
+    print(cf.red(f"master_parameters={r.master_parameters}"))
     if use_adam_optimizer:
         optimizer = adam.AdamWithWeightStashing(
             modules=r.modules(), master_parameters=r.master_parameters,

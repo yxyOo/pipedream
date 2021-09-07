@@ -512,6 +512,7 @@ if __name__ == '__main__':
         num_stages = 0
         for (stage_id, replication_factor) in stage_to_num_ranks_map:
             num_stages += replication_factor
+        print(f"len(stage_to_num_ranks_map={len(stage_to_num_ranks_map)} len(pytorch_modules)={len(pytorch_modules)}")
         assert(len(stage_to_num_ranks_map) == len(pytorch_modules))
         num_modules = len(pytorch_modules) + 1  # Add 1 for criterion.
     elif pytorch_modules is None:

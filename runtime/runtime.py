@@ -126,6 +126,8 @@ class StageRuntime:
             self.num_warmup_minibatches = 0
             self.comm_handler = None
         else:
+            print(f"len(module_to_stage_map)={len(module_to_stage_map)},len(model)={len(model)}")
+            print(f"module_to_stage_map={module_to_stage_map},model={model} ,self.rank={self.rank}")
             assert len(module_to_stage_map) == len(model)
             assert self.rank is not None
 

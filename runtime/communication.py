@@ -607,6 +607,7 @@ class CommunicationHandler(object):
             return tensor
         else:
             index = self.get_messaging_index(sending=False)
+            print(f"index={index}, rank={self.rank}, tensor_name={tensor_name}")
             tensor = self.forward_receive_queues[tensor_name][
                 index].remove()
             if tensor.dtype == torch.float32:

@@ -283,6 +283,8 @@ def main():
     use_adam_optimizer = True
     import colorful as cf
     print(cf.red(f"master_parameters={r.master_parameters}"))
+    if r.master_parameters == [] :
+        r.master_parameters=[torch.rand(2,3)]
     if use_adam_optimizer:
         optimizer = adam.AdamWithWeightStashing(
             modules=r.modules(), master_parameters=r.master_parameters,

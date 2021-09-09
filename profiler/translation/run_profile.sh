@@ -5,7 +5,7 @@ CUDA_VISIBLE_DEVICES=0 python train.py \
   --epochs 20 \
   --math fp32 \
   --print-freq 10 \
-  --arch gnmt \
+  --arch gnmt_large \
   --batch-size 64 \
   --test-batch-size 128 \
   --model-config "{'num_layers': 4, 'hidden_size': 1024, 'dropout':0.2, 'share_embedding': False}" \

@@ -673,6 +673,7 @@ class StageRuntime:
             return loader_size
 
         num_iterations = loader_size * self.num_ranks_in_first_stage
+        print(f"loader_size={loader_size},self.num_ranks_in_stage={self.num_ranks_in_stage} ,self.stage={self.stage},self.rank={self.rank}")
         assert num_iterations % self.num_ranks_in_stage == 0
         num_iterations = num_iterations // self.num_ranks_in_stage
 

@@ -487,7 +487,7 @@ class StageRuntime:
             self.comm_handler.increment_messaging_index(
                 sending=True)
 
-    def run_forward(self, recompute_step=False):
+    def run_forward(self,iteration,sum_dur_F, recompute_step=False):
         """Run forward pass.
         """
         
@@ -497,8 +497,14 @@ class StageRuntime:
         tensors = self.tensors[-1]
         end_F_commu=time.time()
         print(f"--rank={self.rank}, duration forward communication={end_F_commu-start_F_commu}")
+
+        start_F = time.time() # sec
         # Run forward pass.
         self._run_forward(tensors)
+        end_F = time.time() # sec
+        sum_dur_F += end_F - start_F
+        print(f"--rank={self.rank}, iteration={iteration} , duration_forward={end_F - start_F},avg_duration_forward={sum_dur_F/(iteration+1)}")
+
 
         # Send tensors forward.
         self.send_tensors_forward()
@@ -506,6 +512,7 @@ class StageRuntime:
             self.forward_stats.print_stats()
         self.forward_stats.reset_stats()
         self.forward_minibatch_id += 1
+        return sum_dur_F
 
     def _run_forward(self, tensors):
         # Perform forward pass through model (self.modules_with_dependencies already

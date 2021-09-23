@@ -42,7 +42,7 @@ class BucketingSampler(Sampler):
         self.global_batch_size = batch_size * world_size
 
         self.data_len = len(self.dataset)
-        self.num_samples = self.data_len // self.global_batch_size \
+        self.num_samples = self.data_len // self.global_batch_size  \
             * self.global_batch_size
 
     def __iter__(self):

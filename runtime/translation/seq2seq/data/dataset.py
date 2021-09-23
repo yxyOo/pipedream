@@ -129,6 +129,8 @@ class TextDataset(Dataset):
                 entry = tokenizer.segment(line)
                 entry = torch.tensor(entry)
                 data.append(entry)
+        print(f"process_data:{len(data)}")
+            
         return data
 
     def __len__(self):

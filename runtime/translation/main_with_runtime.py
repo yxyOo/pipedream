@@ -351,6 +351,7 @@ def main():
 
     for epoch in range(args.start_epoch, args.epochs):
         if distributed_sampler:
+            print("distributed_sample:true")
             train_loader.sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args.epochs, r, args.lr_policy)
 

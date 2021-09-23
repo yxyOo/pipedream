@@ -42,8 +42,9 @@ class BucketingSampler(Sampler):
         self.global_batch_size = batch_size * world_size
 
         self.data_len = len(self.dataset)
-        self.num_samples = self.data_len // self.global_batch_size \
-            * self.global_batch_size
+        print(f"bucketsampler dataszie={self.data_len}")
+        self.num_samples = (self.data_len // self.global_batch_size - 1) \
+            * self.global_batch_size 
 
     def __iter__(self):
         # gnmt_print(key=mlperf_log.INPUT_ORDER)

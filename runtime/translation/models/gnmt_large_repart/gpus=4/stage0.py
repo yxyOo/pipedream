@@ -1,6 +1,6 @@
 import torch
-from seq2seq.models.decoder import RecurrentAttention
 from seq2seq.models.encoder import EmuBidirLSTM
+from seq2seq.models.decoder import RecurrentAttention
 
 class Stage0(torch.nn.Module):
     def __init__(self):

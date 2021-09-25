@@ -1,0 +1,3 @@
+gnmt_large_repart,64,OOM,
+gnmt_large_repart,32,modify_sampler
+gnmt_large_repart1,32,modify_sampler

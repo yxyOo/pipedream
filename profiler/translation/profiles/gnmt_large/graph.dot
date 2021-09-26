@@ -2,47 +2,47 @@ digraph {
 	node1 [label="Input0
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=0.0,parameter_size=0.0]"]
 	node4 [label="Embedding(32320, 1024, padding_idx=0)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=12845056.0,parameter_size=132382720.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4980736.0,parameter_size=132382720.0]"]
 	node5 [label="EmuBidirLSTM(
   (bidir): LSTM(1024, 1024, bidirectional=True)
   (layer1): LSTM(1024, 1024)
   (layer2): LSTM(1024, 1024)
 )
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=25690112.0,parameter_size=67174400.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=9961472.0,parameter_size=67174400.0]"]
 	node2 [label="Input1
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=0.0,parameter_size=0.0]"]
 	node6 [label="Dropout(p=0.2)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=25690112.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=9961472.0,parameter_size=0.0]"]
 	node7 [label="LSTM(2048, 1024)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[12845056.0, 262144.0, 262144.0],parameter_size=50364416.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[4980736.0, 262144.0, 262144.0],parameter_size=50364416.0]"]
 	node8 [label="__getitem__(0)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=12845056.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4980736.0,parameter_size=0.0]"]
 	node9 [label="__getitem__(1)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=262144.0,parameter_size=0.0]"]
 	node10 [label="Dropout(p=0.2)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=12845056.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4980736.0,parameter_size=0.0]"]
 	node11 [label="LSTM(1024, 1024)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[12845056.0, 262144.0, 262144.0],parameter_size=33587200.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[4980736.0, 262144.0, 262144.0],parameter_size=33587200.0]"]
 	node12 [label="__getitem__(0)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=12845056.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4980736.0,parameter_size=0.0]"]
 	node13 [label="__getitem__(1)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=262144.0,parameter_size=0.0]"]
 	node14 [label="Add
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=12845056.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4980736.0,parameter_size=0.0]"]
 	node15 [label="Dropout(p=0.2)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=12845056.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4980736.0,parameter_size=0.0]"]
 	node16 [label="LSTM(1024, 1024)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[12845056.0, 262144.0, 262144.0],parameter_size=33587200.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[4980736.0, 262144.0, 262144.0],parameter_size=33587200.0]"]
 	node17 [label="__getitem__(0)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=12845056.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4980736.0,parameter_size=0.0]"]
 	node18 [label="__getitem__(1)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=262144.0,parameter_size=0.0]"]
 	node19 [label="Add
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=12845056.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4980736.0,parameter_size=0.0]"]
 	node3 [label="Input2
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=0.0,parameter_size=0.0]"]
 	node21 [label="Embedding(32320, 1024, padding_idx=0)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=132382720.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=132382720.0]"]
 	node20 [label="hidden
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=0.0,parameter_size=0.0]"]
 	node22 [label="__getitem__(0)
@@ -56,59 +56,59 @@ digraph {
   )
   (dropout): Dropout(p=0)
 )
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[11272192.0, 262144.0, 262144.0, 11272192.0, 539392.0],parameter_size=41979904.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[4718592.0, 262144.0, 262144.0, 4718592.0, 87552.0],parameter_size=41979904.0]"]
 	node24 [label="__getitem__(0)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node25 [label="__getitem__(1)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=262144.0,parameter_size=0.0]"]
 	node26 [label="__getitem__(2)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=262144.0,parameter_size=0.0]"]
 	node27 [label="__getitem__(3)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node28 [label="Dropout(p=0.2)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node29 [label="Concat(2)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node30 [label="__getitem__(1)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=0.0,parameter_size=0.0]"]
 	node31 [label="LSTM(2048, 1024)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[11272192.0, 262144.0, 262144.0],parameter_size=50364416.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[4718592.0, 262144.0, 262144.0],parameter_size=50364416.0]"]
 	node32 [label="__getitem__(0)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node33 [label="__getitem__(1)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=262144.0,parameter_size=0.0]"]
 	node34 [label="Dropout(p=0.2)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node35 [label="Concat(2)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node36 [label="__getitem__(2)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=0.0,parameter_size=0.0]"]
 	node37 [label="LSTM(2048, 1024)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[11272192.0, 262144.0, 262144.0],parameter_size=50364416.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[4718592.0, 262144.0, 262144.0],parameter_size=50364416.0]"]
 	node38 [label="__getitem__(0)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node39 [label="__getitem__(1)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=262144.0,parameter_size=0.0]"]
 	node40 [label="Add
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node41 [label="Dropout(p=0.2)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node42 [label="Concat(2)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node43 [label="__getitem__(3)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=0.0,parameter_size=0.0]"]
 	node44 [label="LSTM(2048, 1024)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[11272192.0, 262144.0, 262144.0],parameter_size=50364416.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=[4718592.0, 262144.0, 262144.0],parameter_size=50364416.0]"]
 	node45 [label="__getitem__(0)
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node46 [label="__getitem__(1)
 [forward_compute_time=0.000,backward_compute_time=0.000,activation_size=262144.0,parameter_size=0.0]"]
 	node47 [label="Add
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=11272192.0,parameter_size=0.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=4718592.0,parameter_size=0.0]"]
 	node48 [label="Classifier(
   (classifier): Linear(in_features=1024, out_features=32320, bias=True)
 )
-[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=355778560.0,parameter_size=132512000.0]"]
+[forward_compute_time=0.000,backward_compute_time=0.000,activation_size=148930560.0,parameter_size=132512000.0]"]
 	node1 -> node4
 	node4 -> node5
 	node5 -> node6

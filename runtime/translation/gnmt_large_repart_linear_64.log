@@ -1,0 +1,111 @@
+len(module_to_stage_map)=5,len(model)=5
+module_to_stage_map=[0, 1, 2, 3, 3],model=[(Stage0(
+  (layer6): Embedding(32320, 1024, padding_idx=0)
+), ['input0', 'input1', 'input2'], ['out2', 'out3', 'out0']), (Stage1(
+  (layer2): EmuBidirLSTM(
+    (bidir): LSTM(1024, 1024, bidirectional=True)
+    (layer1): LSTM(1024, 1024)
+    (layer2): LSTM(1024, 1024)
+  )
+  (layer3): Dropout(p=0.2)
+  (layer4): LSTM(2048, 1024)
+  (layer6): Dropout(p=0.2)
+  (layer7): LSTM(1024, 1024)
+), ['out2', 'out0'], ['out5']), (Stage2(
+  (layer7): Embedding(32320, 1024, padding_idx=0)
+  (layer8): Dropout(p=0.2)
+  (layer9): LSTM(1024, 1024)
+  (layer12): RecurrentAttention(
+    (rnn): LSTM(1024, 1024)
+    (attn): BahdanauAttention(
+      (linear_q): Linear(in_features=1024, out_features=1024, bias=False)
+      (linear_k): Linear(in_features=1024, out_features=1024, bias=False)
+      (dropout): Dropout(p=0)
+    )
+    (dropout): Dropout(p=0)
+  )
+  (layer15): Dropout(p=0.2)
+  (layer17): LSTM(2048, 1024)
+), ['out5', 'out2', 'out3'], ['out8', 'out10']), (Stage3(
+  (layer4): Dropout(p=0.2)
+  (layer6): LSTM(2048, 1024)
+  (layer9): Dropout(p=0.2)
+  (layer11): LSTM(2048, 1024)
+  (layer14): Classifier(
+    (classifier): Linear(in_features=1024, out_features=32320, bias=True)
+  )
+), ['out8', 'out10'], ['out11']), (LabelSmoothing(), ['out11'], ['loss'])] ,self.rank=0
+len(module_to_stage_map)=5,len(model)=5
+module_to_stage_map=[0, 1, 2, 3, 3],model=[(Stage0(
+  (layer6): Embedding(32320, 1024, padding_idx=0)
+), ['input0', 'input1', 'input2'], ['out2', 'out3', 'out0']), (Stage1(
+  (layer2): EmuBidirLSTM(
+    (bidir): LSTM(1024, 1024, bidirectional=True)
+    (layer1): LSTM(1024, 1024)
+    (layer2): LSTM(1024, 1024)
+  )
+  (layer3): Dropout(p=0.2)
+  (layer4): LSTM(2048, 1024)
+  (layer6): Dropout(p=0.2)
+  (layer7): LSTM(1024, 1024)
+), ['out2', 'out0'], ['out5']), (Stage2(
+  (layer7): Embedding(32320, 1024, padding_idx=0)
+  (layer8): Dropout(p=0.2)
+  (layer9): LSTM(1024, 1024)
+  (layer12): RecurrentAttention(
+    (rnn): LSTM(1024, 1024)
+    (attn): BahdanauAttention(
+      (linear_q): Linear(in_features=1024, out_features=1024, bias=False)
+      (linear_k): Linear(in_features=1024, out_features=1024, bias=False)
+      (dropout): Dropout(p=0)
+    )
+    (dropout): Dropout(p=0)
+  )
+  (layer15): Dropout(p=0.2)
+  (layer17): LSTM(2048, 1024)
+), ['out5', 'out2', 'out3'], ['out8', 'out10']), (Stage3(
+  (layer4): Dropout(p=0.2)
+  (layer6): LSTM(2048, 1024)
+  (layer9): Dropout(p=0.2)
+  (layer11): LSTM(2048, 1024)
+  (layer14): Classifier(
+    (classifier): Linear(in_features=1024, out_features=32320, bias=True)
+  )
+), ['out8', 'out10'], ['out11']), (LabelSmoothing(), ['out11'], ['loss'])] ,self.rank=2
+len(module_to_stage_map)=5,len(model)=5
+module_to_stage_map=[0, 1, 2, 3, 3],model=[(Stage0(
+  (layer6): Embedding(32320, 1024, padding_idx=0)
+), ['input0', 'input1', 'input2'], ['out2', 'out3', 'out0']), (Stage1(
+  (layer2): EmuBidirLSTM(
+    (bidir): LSTM(1024, 1024, bidirectional=True)
+    (layer1): LSTM(1024, 1024)
+    (layer2): LSTM(1024, 1024)
+  )
+  (layer3): Dropout(p=0.2)
+  (layer4): LSTM(2048, 1024)
+  (layer6): Dropout(p=0.2)
+  (layer7): LSTM(1024, 1024)
+), ['out2', 'out0'], ['out5']), (Stage2(
+  (layer7): Embedding(32320, 1024, padding_idx=0)
+  (layer8): Dropout(p=0.2)
+  (layer9): LSTM(1024, 1024)
+  (layer12): RecurrentAttention(
+    (rnn): LSTM(1024, 1024)
+    (attn): BahdanauAttention(
+      (linear_q): Linear(in_features=1024, out_features=1024, bias=False)
+      (linear_k): Linear(in_features=1024, out_features=1024, bias=False)
+      (dropout): Dropout(p=0)
+    )
+    (dropout): Dropout(p=0)
+  )
+  (layer15): Dropout(p=0.2)
+  (layer17): LSTM(2048, 1024)
+), ['out5', 'out2', 'out3'], ['out8', 'out10']), (Stage3(
+  (layer4): Dropout(p=0.2)
+  (layer6): LSTM(2048, 1024)
+  (layer9): Dropout(p=0.2)
+  (layer11): LSTM(2048, 1024)
+  (layer14): Classifier(
+    (classifier): Linear(in_features=1024, out_features=32320, bias=True)
+  )
+), ['out8', 'out10'], ['out11']), (LabelSmoothing(), ['out11'], ['loss'])] ,self.rank=1
